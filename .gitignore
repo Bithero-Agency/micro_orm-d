@@ -1,0 +1,17 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/miniorm
+**/*.so
+**/*.dylib
+**/*.dll
+**/*.a
+**/*.lib
+miniorm-test-*
+test/test
+*.exe
+*.pdb
+*.o
+*.obj
+*.lst

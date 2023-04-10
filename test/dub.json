@@ -1,0 +1,15 @@
+{
+	"name": "test",
+	"authors": [ "Mai-Lapyst" ],
+	"copyright": "Copyright © 2023, Mai-Lapyst",
+	"license": "AGPL-3.0-or-later",
+	"description": "Tests",
+	"dependencies": {
+		"miniorm": {
+			"path": "../"
+		},
+		"miniorm:backend_libmariadb" : {
+			"path": "../subpackages/backend_libmariadb"
+		}
+	}
+}

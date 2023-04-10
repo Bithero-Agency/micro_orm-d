@@ -1,0 +1,12 @@
+{
+	"name": "miniorm",
+	"authors": [
+		"Mai-Lapyst"
+	],
+	"copyright": "Copyright © 2023, Mai-Lapyst",
+	"description": "A minimal jet complete orm for dlang projects",
+	"license": "AGPL-3.0-or-later",
+	"subPackages": [
+		"./subpackages/backend_libmariadb"
+	]
+}
