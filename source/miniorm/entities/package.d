@@ -157,13 +157,6 @@ template BaseEntity(alias T)
                         ~ "\"" ~ Name ~ "\","
                         ~ Type
                     ~ ")," ~ ColumnGen!(i+1);
-
-                // enum ColumnGen =
-                //     "imported!\"miniorm.entities\".ColumnInfo("
-                //         ~ isAggregateType!(fieldType).stringof ~ ","
-                //         ~ "\"" ~ Type ~ "\","
-                //         ~ "\"" ~ Name ~ "\""
-                //     ~ ")," ~ ColumnGen!(i+1);
             }
         }
         static immutable Columns = mixin( "[" ~ ColumnGen!() ~ "]" );
