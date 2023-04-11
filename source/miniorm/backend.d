@@ -57,7 +57,7 @@ interface Backend {
     void connect(string dsn, string user, string passwd);
     void close();
 
-    void ensurePresence(string storageName, immutable ColumnInfo[] columns);
+    void ensurePresence(string storageName, immutable ColumnInfo[] columns, immutable ColumnInfo[] primarykeys);
 
     //Schema[] list();
     //Schema get(string name);

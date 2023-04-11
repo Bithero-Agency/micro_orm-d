@@ -20,6 +20,7 @@ enum SomeEnum {
 @Entity
 @Storage("person")
 class Person {
+	@Id
 	@Field(FieldType.String, 255)
 	string name;
 

@@ -26,6 +26,7 @@
 module miniorm.entities;
 
 public import miniorm.entities.fields;
+public import miniorm.entities.id;
 
 struct Storage {
     string name;
@@ -33,9 +34,6 @@ struct Storage {
 }
 
 struct Entity {}
-
-struct Id {}
-struct GeneratedValue {}
 
 // ======================================================================
 
@@ -171,11 +169,34 @@ template BaseEntity(alias T)
         static immutable Columns = mixin( "[" ~ ColumnGen!() ~ "]" );
         pragma(msg, " - Columns: ", Columns);
 
+        // get all fields annotated with @Id and make primary keys out of them
+        private template PrimaryKeyGen(size_t i = 0) {
+            static if (i == fieldNames.length) {
+                enum PrimaryKeyGen = "";
+            }
+            else static if (hasUDA!(T.tupleof[i], IgnoreField)) {
+                static assert(
+                    !hasUDA!(T.tupleof[i], Field),
+                    "Cannot have both `@IgnoreField` and `@Id` on the same member field: `" ~ fullyQualifiedName!(T.tupleof[i]) ~ "`"
+                );
+                enum PrimaryKeyGen = "" ~ PrimaryKeyGen!(i+1);
+            }
+            else static if (hasUDA!(T.tupleof[i], Id)) {
+                import std.conv : to;
+                enum PrimaryKeyGen = "Columns[" ~ to!string(i) ~ "]," ~ PrimaryKeyGen!(i+1);
+            }
+            else {
+                enum PrimaryKeyGen = "" ~ PrimaryKeyGen!(i+1);
+            }
+        }
+        static immutable PrimaryKeys = mixin( "[" ~ PrimaryKeyGen!() ~ "]" );
+        pragma(msg, " - PrimaryKeys: ", PrimaryKeys);
+
         /// Function that's been called on an database connection to ensure the presence of the entity.
         /// It also validates the structure and yields an error if the entity schema on the remote
         /// dosnt matches the one declared.
         static void ensurePresence(imported!"miniorm".Connection con) {
-            con.ensurePresence(StorageName, Columns);
+            con.backend.ensurePresence(StorageName, Columns, PrimaryKeys);
         }
     }
 

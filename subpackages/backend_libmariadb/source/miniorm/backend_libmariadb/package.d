@@ -43,6 +43,10 @@ private string quoteValue(string i) {
     return "'" ~ i.replace("'", "\\'") ~ "'";
 }
 
+private string quoteName(string i) {
+    return "`" ~ i.replace("`", "\\`") ~ "`";
+}
+
 class LibMariaDbBackend : Backend {
     private MYSQL* con = null;
     private {
@@ -169,11 +173,15 @@ class LibMariaDbBackend : Backend {
         return res.row_count == 1;
     }
 
-    private void create_table(string storageName, immutable ColumnInfo[] columns) {
+    private void create_table(string storageName, immutable ColumnInfo[] columns, immutable ColumnInfo[] primarykeys) {
         string sql = "CREATE TABLE `" ~ storageName ~ "`(";
 
-        foreach (col; columns) {
-            sql ~= "`" ~ col.name ~ "` ";
+        foreach (i, col; columns) {
+            if (i > 0) {
+                sql ~= ",";
+            }
+            sql ~= quoteName(col.name);
+            sql ~= " ";
             switch (col.type) {
                 // TODO: char
                 case FieldType.String: {
@@ -210,11 +218,17 @@ class LibMariaDbBackend : Backend {
                     throw new MariadbException("Unknown field type: " ~ to!string(col.type));
                 }
             }
-            sql ~= ",";
         }
 
-        if (sql[$-1 .. $] == ",") {
-            sql = sql[0 .. $-1];
+        if (primarykeys.length > 0) {
+            sql ~= ", PRIMARY KEY(";
+            foreach (i, key; primarykeys) {
+                if (i > 0) {
+                    sql ~= ",";
+                }
+                sql ~= quoteName(key.name);
+            }
+            sql ~= ")";
         }
 
         sql ~= ");";
@@ -235,9 +249,9 @@ class LibMariaDbBackend : Backend {
         // TODO: implement verify_table
     }
 
-    void ensurePresence(string storageName, immutable ColumnInfo[] columns) {
+    void ensurePresence(string storageName, immutable ColumnInfo[] columns, immutable ColumnInfo[] primarykeys) {
         if (!has_table(storageName)) {
-            this.create_table(storageName, columns);
+            this.create_table(storageName, columns, primarykeys);
         } else {
             this.verify_table(storageName, columns);
         }
