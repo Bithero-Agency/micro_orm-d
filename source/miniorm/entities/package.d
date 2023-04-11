@@ -79,6 +79,7 @@ alias ColumnInfo = Field;
 template BaseEntity(alias T)
 {
     import miniorm.lazylist;
+    import miniorm.exceptions;
 
     /// Contains the Model data of the Entity
     struct MiniOrmModel {
@@ -193,8 +194,15 @@ template BaseEntity(alias T)
         }
     }
 
-    void save() {
-        // TODO: save
+    void save(imported!"miniorm".Connection con) {
+        import std.traits : fullyQualifiedName;
+        if (con.id != MiniOrmModel.ConnectionName) {
+            throw new MiniOrmException(
+                "Cannot save entity of type `" ~ fullyQualifiedName!T ~ "`"
+                    ~ " which requires the connection-id `" ~ MiniOrmModel.ConnectionName ~ "`"
+                    ~ " onto a connection that has a id of `" ~ con.id ~ "`"
+            );
+        }
     }
 
     static SelectQuery find() {
