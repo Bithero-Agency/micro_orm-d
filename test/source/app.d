@@ -1,14 +1,38 @@
+module app;
+
 import std.stdio;
 import core.stdc.stdio : printf;
+import std.string : toStringz;
 
+import miniorm.backend_libmariadb;
 import miniorm.backend_libmariadb.mysql.mysql;
-import miniorm.models;
+
+import miniorm;
+
+struct Other {}
+
+enum SomeEnum {
+	SE_ONE,
+	SE_TWO,
+	SE_THREE,
+}
 
 @Entity
+@Storage("person")
 class Person {
+	@Field(FieldType.String, 255)
+	string name;
+
+	SomeEnum en;
+
+	// @Field
+	// @Field("zzz")
+	int age;
+
+	@IgnoreField
+	Other o;
+
 	mixin BaseEntity!Person;
-
-
 }
 
 
@@ -27,7 +51,7 @@ class Person {
 //);
 //extern (C) void mysql_close(MYSQL* sock);
 
-int main(string[] args) {
+int test_mysql(string[] args) {
 	if (args.length != 3) {
 		writeln("need 3 arguments");
 		return 1;
@@ -46,7 +70,7 @@ int main(string[] args) {
 
 	if (
 		mysql_real_connect(
-			con, host, user, pass,
+			con, toStringz(host), toStringz(user), toStringz(pass),
 			null, 3306, null, 0
 		) == null
 	) {
@@ -104,5 +128,36 @@ int main(string[] args) {
 	// -----------------------------
 
 	mysql_close(con);
+	return 0;
+}
+
+string[string] readDotEnv() {
+	import std.file : readText;
+	import std.string : split, splitLines;
+
+	string[string] res;
+
+	auto dotenv = readText("./.env");
+	foreach (line; splitLines(dotenv)) {
+		auto data = line.split("=");
+		res[data[0]] = data[1];
+	}
+
+	return res;
+}
+
+int main(string[] args) {
+
+	// Person.find();
+	auto env = readDotEnv();
+
+	auto con = Connection.create!app(
+		"mysql:host=" ~ env["DB_HOST"] ~ ";db_name=" ~ env["DB_NAME"], env["DB_USER"], env["DB_PASS"]
+	);
+
+	// sqlite://filepath?param=value
+
+
+	//return test_mysql(args);
 	return 0;
 }

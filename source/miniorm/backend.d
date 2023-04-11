@@ -25,6 +25,9 @@
 
 module miniorm.backend;
 
+import miniorm.entities : ColumnInfo;
+import miniorm.exceptions : MiniOrmException;
+
 interface Schema {
     Backend getBackend();
 
@@ -51,11 +54,69 @@ interface Collection {
 }
 
 interface Backend {
-    void connect(string dsn);
+    void connect(string dsn, string user, string passwd);
+    void close();
 
-    Schema[] list();
-    Schema get(string name);
-    Schema create(string name);
-    bool remove(string name);
-    Schema defaultSchema();
+    void ensurePresence(string storageName, immutable ColumnInfo[] columns);
+
+    //Schema[] list();
+    //Schema get(string name);
+    //Schema create(string name);
+    //bool remove(string name);
+    //Schema defaultSchema();
+}
+
+class NoSuchBackendException : MiniOrmException {
+    this(string name) {
+        super("Could not find miniorm-backend '" ~ name ~ "'");
+    }
+}
+
+class BackendRegistry {
+    private Backend delegate()[string] constructors;
+
+    private shared this() {}
+
+    static shared(BackendRegistry) instance() {
+        static shared BackendRegistry _instance;
+        if (!_instance) {
+            synchronized {
+                if (!_instance) {
+                    _instance = new shared(BackendRegistry)();
+                }
+            }
+        }
+        return _instance;
+    }
+
+    synchronized void register(alias BackendClass)(string name) {
+        debug (miniorm_backend_register) {
+            import std.stdio;
+            writeln("[miniorm.backend.BackendRegistry] registering '", name, "' backend");
+        }
+        import std.traits;
+        constructors[name] = () {
+            mixin(
+                "return new imported!\"" ~ moduleName!BackendClass ~ "\"." ~ BackendClass.stringof ~ "();"
+            );
+        };
+    }
+
+    synchronized Backend create(string name) {
+        auto p = name in constructors;
+        if (p !is null) {
+            return (*p)();
+        } else {
+            throw new NoSuchBackendException(name);
+        }
+    }
+}
+
+template RegisterBackend(string name, alias BackendClass) {
+    import std.traits;
+    pragma(msg, "Registering miniorm backend '" ~ name ~ "' with type ", fullyQualifiedName!BackendClass);
+
+    static this() {
+        BackendRegistry.instance().register!BackendClass(name);
+    }
 }
