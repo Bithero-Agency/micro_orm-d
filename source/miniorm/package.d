@@ -34,15 +34,19 @@ import std.stdio;
 class Connection {
     private static shared(string[]) connectionIds;
 
-    private Backend backend;
-    private string id;
+    private Backend _backend;
+    private string _id;
 
     private this(string id) {
-        this.id = id;
+        this._id = id;
     }
 
-    void ensurePresence(string storageName, immutable ColumnInfo[] columns) {
-        backend.ensurePresence(storageName, columns);
+    @property string id() {
+        return this._id;
+    }
+
+    @property Backend backend() {
+        return this._backend;
     }
 
     static Connection create(Modules...)(
@@ -72,7 +76,7 @@ class Connection {
         }
 
         auto driver_name = dsn[0 .. i];
-        con.backend = BackendRegistry.instance().create(driver_name);
+        con._backend = BackendRegistry.instance().create(driver_name);
         try {
             con.backend.connect(dsn[i+1 .. $], user, password);
         } catch (Exception e) {
