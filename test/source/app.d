@@ -8,6 +8,7 @@ import miniorm.backend_libmariadb;
 import miniorm.backend_libmariadb.mysql.mysql;
 
 import miniorm;
+import miniorm.backend : QueryResult;
 
 struct Other {}
 
@@ -32,6 +33,12 @@ class Person {
 
 	@IgnoreField
 	Other o;
+
+	// static Person from_query_result(QueryResult data) {
+	// 	auto res = new Person();
+	// 	res.name = data.get!string( Person.MiniOrmModel.Columns[0] );
+	// 	return res;
+	// }
 
 	mixin BaseEntity!Person;
 }
@@ -158,8 +165,11 @@ int main(string[] args) {
 
 	auto q = Person.find()
 		.order_by_asc("name")
-		.offset(1);
-	q.all(con);
+		.offset(0);
+	auto list = q.all(con);
+	foreach (p; list) {
+		writeln("name: `", p.name, "` | ", "age: ", p.age, "` | ", "en: ", p.en);
+	}
 
 	// sqlite://filepath?param=value
 

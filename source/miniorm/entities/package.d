@@ -43,8 +43,36 @@ enum Order {
     Desc,
 }
 
-/// Represents a select query
-class SelectQuery {
+private template ImplSelectQuery(T) {
+    //T filter(string field, ) {
+    //    return this;
+    //}
+
+    T order_by(string field, Order ord) {
+        this._orders ~= Tuple!(string, Order)(field, ord);
+        return this;
+    }
+
+    T order_by_asc(string field) {
+        return order_by(field, Order.Asc);
+    }
+
+    T order_by_desc(string field) {
+        return order_by(field, Order.Desc);
+    }
+
+    T limit(size_t limit) {
+        this._limit = limit;
+        return this;
+    }
+
+    T offset(size_t offset) {
+        this._offset = offset;
+        return this;
+    }
+}
+
+class BaseSelectQuery {
     private {
         string _storageName;
         string _connectionId;
@@ -81,43 +109,49 @@ class SelectQuery {
         return this._primarykeys;
     }
 
-    SelectQuery order_by(string field, Order ord) {
-        this._orders ~= Tuple!(string, Order)(field, ord);
-        return this;
-    }
-
-    SelectQuery order_by_asc(string field) {
-        return order_by(field, Order.Asc);
-    }
-
-    SelectQuery order_by_desc(string field) {
-        return order_by(field, Order.Desc);
-    }
-
     @property const(Tuple!(string, Order)[]) orders() const {
         return this._orders;
-    }
-
-    SelectQuery limit(size_t limit) {
-        this._limit = limit;
-        return this;
     }
 
     size_t getLimit() const {
         return this._limit;
     }
 
-    SelectQuery offset(size_t offset) {
-        this._offset = offset;
-        return this;
-    }
-
     size_t getOffset() const {
         return this._offset;
     }
+}
 
-    void all(imported!"miniorm".Connection con) {
-        con.backend.select(this, true);
+/// Represents a select query
+class SelectQuery(T) : BaseSelectQuery {
+    this(
+        string storageName, string connectionId,
+        immutable(Field[]) fields, immutable(Field[]) primarykeys
+    ) {
+        super(storageName, connectionId, fields, primarykeys);
+    }
+
+    mixin ImplSelectQuery!(SelectQuery!T);
+
+    private BaseSelectQuery toBase() {
+        auto base = new BaseSelectQuery(storageName, connectionId, fields, primarykeys);
+        base._orders = this._orders;
+        base._limit = this._limit;
+        base._offset = this._offset;
+        return base;
+    }
+
+    T[] all(imported!"miniorm".Connection con) {
+        auto results = con.backend.select(this.toBase(), true);
+
+        T[] entities;
+        entities.reserve(results.length);
+
+        foreach (res; results) {
+            entities ~= T.MiniOrmModel.from_query_result(res);
+        }
+
+        return entities;
     }
 
 }
@@ -259,8 +293,29 @@ template BaseEntity(alias T)
             con.backend.ensurePresence(StorageName, Columns, PrimaryKeys);
         }
 
-        //import std.variant;
-        //static T build(Variant[] data) {}
+        import miniorm.backend : QueryResult;
+        static T from_query_result(QueryResult data) {
+            auto res = new T();
+            template FieldSetterGen(size_t i = 0) {
+                static if (i == fieldNames.length) {
+                    enum FieldSetterGen = "";
+                }
+                else static if (hasUDA!(T.tupleof[i], IgnoreField)) {
+                    enum FieldSetterGen = "";
+                }
+                else {
+                    import std.conv : to;
+                    enum FieldSetterGen =
+                        "res." ~ fieldNames[i] ~ " = "
+                        ~ "imported!\"std.conv\".to!(" ~ fieldTypes[i].stringof ~ ")( "
+                            ~ "data.get( " ~ to!string(i) ~ ", Columns[" ~ to!string(i) ~ "] )"
+                        ~ " );"
+                        ~ FieldSetterGen!(i+1);
+                }
+            }
+            mixin( FieldSetterGen!() );
+            return res;
+        }
     }
 
     void save(imported!"miniorm".Connection con) {
@@ -274,9 +329,9 @@ template BaseEntity(alias T)
         }
     }
 
-    static SelectQuery find() {
+    static SelectQuery!T find() {
         import std.stdio;
-        return new SelectQuery(
+        return new SelectQuery!T(
             MiniOrmModel.StorageName, MiniOrmModel.ConnectionName,
             MiniOrmModel.Columns, MiniOrmModel.PrimaryKeys
         );

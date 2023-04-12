@@ -47,6 +47,22 @@ private string quoteName(string i) {
     return "`" ~ i.replace("`", "\\`") ~ "`";
 }
 
+class MysqlQueryResult : QueryResult {
+    private string[] _row;
+
+    this(char** row, int col_count) {
+        _row.reserve(col_count);
+        foreach(i; 0..col_count) {
+            auto field = row[i];
+            _row ~= to!string(field);
+        }
+    }
+
+    string get(size_t index, immutable ColumnInfo col) {
+        return _row[index];
+    }
+}
+
 class LibMariaDbBackend : Backend {
     private MYSQL* con = null;
     private {
@@ -257,7 +273,7 @@ class LibMariaDbBackend : Backend {
         }
     }
 
-    string buildSelect(SelectQuery query) {
+    string buildSelect(BaseSelectQuery query) {
         string sql = "SELECT ";
         foreach (i, f; query.fields) {
             if (i > 0) { sql ~= ","; }
@@ -285,7 +301,7 @@ class LibMariaDbBackend : Backend {
         return sql ~ ";";
     }
 
-    void select(SelectQuery query, bool all) {
+    QueryResult[] select(BaseSelectQuery query, bool all) {
         string sql = buildSelect(query);
         debug (miniorm_mariadb_select) {
             import std.stdio;
@@ -297,7 +313,11 @@ class LibMariaDbBackend : Backend {
             throw new MiniOrmException("Error while quering: " ~ to!string(mysql_error(con)));
         }
 
+        QueryResult[] query_res;
+
         MYSQL_RES* res = mysql_use_result(this.con);
+        query_res.reserve(res.row_count);
+
         while (true) {
             MYSQL_ROW row = mysql_fetch_row(res);
             if (row is null) { break; }
@@ -308,8 +328,12 @@ class LibMariaDbBackend : Backend {
                 write(f.name, "=", to!string(row[i]));
             }
             writeln();
+
+            query_res ~= new MysqlQueryResult(row, res.field_count);
         }
         mysql_free_result(res);
+
+        return query_res;
     }
 }
 
