@@ -156,7 +156,9 @@ int main(string[] args) {
 		"mysql:host=" ~ env["DB_HOST"] ~ ";db_name=" ~ env["DB_NAME"], env["DB_USER"], env["DB_PASS"]
 	);
 
-	auto q = Person.find().order_by("name", Order.Asc);
+	auto q = Person.find()
+		.order_by_asc("name")
+		.offset(1);
 	q.all(con);
 
 	// sqlite://filepath?param=value

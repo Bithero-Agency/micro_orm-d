@@ -276,6 +276,12 @@ class LibMariaDbBackend : Backend {
                 }
             }
         }
+        if (query.getLimit() > 0) {
+            sql ~= " LIMIT " ~ to!string(query.getLimit());
+        }
+        if (query.getOffset() > 0) {
+            sql ~= " LIMIT " ~ to!string(query.getOffset()) ~ ", 18446744073709551615";
+        }
         return sql ~ ";";
     }
 

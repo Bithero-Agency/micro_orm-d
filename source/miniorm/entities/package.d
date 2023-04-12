@@ -51,6 +51,8 @@ class SelectQuery {
         immutable(Field[]) _fields;
         immutable(Field[]) _primarykeys;
         Tuple!(string, Order)[] _orders;
+        size_t _limit = 0;
+        size_t _offset = 0;
     }
 
     this(
@@ -94,6 +96,24 @@ class SelectQuery {
 
     @property const(Tuple!(string, Order)[]) orders() const {
         return this._orders;
+    }
+
+    SelectQuery limit(size_t limit) {
+        this._limit = limit;
+        return this;
+    }
+
+    size_t getLimit() const {
+        return this._limit;
+    }
+
+    SelectQuery offset(size_t offset) {
+        this._offset = offset;
+        return this;
+    }
+
+    size_t getOffset() const {
+        return this._offset;
     }
 
     void all(imported!"miniorm".Connection con) {
@@ -239,8 +259,8 @@ template BaseEntity(alias T)
             con.backend.ensurePresence(StorageName, Columns, PrimaryKeys);
         }
 
-        import std.variant;
-        static T build(Variant[] data) {}
+        //import std.variant;
+        //static T build(Variant[] data) {}
     }
 
     void save(imported!"miniorm".Connection con) {
