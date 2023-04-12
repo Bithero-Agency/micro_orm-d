@@ -25,7 +25,7 @@
 
 module miniorm.backend;
 
-import miniorm.entities : ColumnInfo;
+import miniorm.entities : ColumnInfo, SelectQuery;
 import miniorm.exceptions : MiniOrmException;
 
 interface Schema {
@@ -58,6 +58,8 @@ interface Backend {
     void close();
 
     void ensurePresence(string storageName, immutable ColumnInfo[] columns, immutable ColumnInfo[] primarykeys);
+
+    void select(SelectQuery query, bool all);
 
     //Schema[] list();
     //Schema get(string name);

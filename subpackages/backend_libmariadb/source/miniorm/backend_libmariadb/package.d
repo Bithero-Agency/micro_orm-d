@@ -256,6 +256,55 @@ class LibMariaDbBackend : Backend {
             this.verify_table(storageName, columns);
         }
     }
+
+    string buildSelect(SelectQuery query) {
+        string sql = "SELECT ";
+        foreach (i, f; query.fields) {
+            if (i > 0) { sql ~= ","; }
+            sql ~= quoteName(f.name);
+        }
+        sql ~= " FROM " ~ quoteName(query.storageName);
+        sql ~= " WHERE 1";
+        if (query.orders.length > 0) {
+            sql ~= " ORDER BY ";
+            foreach (i, o; query.orders) {
+                if (i > 0) { sql ~= ","; }
+                sql ~= quoteName(o[0]) ~ " ";
+                final switch (o[1]) {
+                    case Order.Asc: sql ~= "ASC"; break;
+                    case Order.Desc: sql ~= "DESC"; break;
+                }
+            }
+        }
+        return sql ~ ";";
+    }
+
+    void select(SelectQuery query, bool all) {
+        string sql = buildSelect(query);
+        debug (miniorm_mariadb_select) {
+            import std.stdio;
+            writeln("[LibMariaDbBackend.select()]: sql to run:");
+            writeln(sql);
+        }
+
+        if (mysql_query(this.con, toStringz(sql))) {
+            throw new MiniOrmException("Error while quering: " ~ to!string(mysql_error(con)));
+        }
+
+        MYSQL_RES* res = mysql_use_result(this.con);
+        while (true) {
+            MYSQL_ROW row = mysql_fetch_row(res);
+            if (row is null) { break; }
+
+            import std.stdio;
+            foreach (i, f; query.fields) {
+                if (i > 0) { write(" | "); }
+                write(f.name, "=", to!string(row[i]));
+            }
+            writeln();
+        }
+        mysql_free_result(res);
+    }
 }
 
 mixin RegisterBackend!("mariadb", LibMariaDbBackend);

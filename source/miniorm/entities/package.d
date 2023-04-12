@@ -27,6 +27,7 @@ module miniorm.entities;
 
 public import miniorm.entities.fields;
 public import miniorm.entities.id;
+import std.typecons : Tuple;
 
 struct Storage {
     string name;
@@ -44,17 +45,57 @@ enum Order {
 
 /// Represents a select query
 class SelectQuery {
+    private {
+        string _storageName;
+        string _connectionId;
+        immutable(Field[]) _fields;
+        immutable(Field[]) _primarykeys;
+        Tuple!(string, Order)[] _orders;
+    }
+
+    this(
+        string storageName, string connectionId,
+        immutable(Field[]) fields, immutable(Field[]) primarykeys
+    ) {
+        this._storageName = storageName;
+        this._connectionId = connectionId;
+        this._fields = fields;
+        this._primarykeys = primarykeys;
+    }
+
+    @property string storageName() const {
+        return this._storageName;
+    }
+
+    @property string connectionId() const {
+        return this._connectionId;
+    }
+
+    @property immutable(Field[]) fields() const {
+        return this._fields;
+    }
+
+    @property immutable(Field[]) primarykeys() const {
+        return this._primarykeys;
+    }
 
     SelectQuery order_by(string field, Order ord) {
-        // TODO
+        this._orders ~= Tuple!(string, Order)(field, ord);
         return this;
     }
 
     alias order_by_asc(string field) = order_by(field, Order.Asc);
+    alias order_by_desc(string field) = order_by(field, Order.Desc);
+
+    @property const(Tuple!(string, Order)[]) orders() const {
+        return this._orders;
+    }
+
+    void all(imported!"miniorm".Connection con) {
+        con.backend.select(this, true);
+    }
 
 }
-
-
 
 template isField(alias of)
 {
@@ -192,6 +233,9 @@ template BaseEntity(alias T)
         static void ensurePresence(imported!"miniorm".Connection con) {
             con.backend.ensurePresence(StorageName, Columns, PrimaryKeys);
         }
+
+        import std.variant;
+        static T build(Variant[] data) {}
     }
 
     void save(imported!"miniorm".Connection con) {
@@ -207,7 +251,10 @@ template BaseEntity(alias T)
 
     static SelectQuery find() {
         import std.stdio;
-        return new SelectQuery();
+        return new SelectQuery(
+            MiniOrmModel.StorageName, MiniOrmModel.ConnectionName,
+            MiniOrmModel.Columns, MiniOrmModel.PrimaryKeys
+        );
     }
 
 

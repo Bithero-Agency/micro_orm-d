@@ -21,7 +21,7 @@ enum SomeEnum {
 @Storage("person")
 class Person {
 	@Id
-	@Field(FieldType.String, 255)
+	//@Field(FieldType.String, 255)
 	string name;
 
 	SomeEnum en;
@@ -155,6 +155,9 @@ int main(string[] args) {
 	auto con = Connection.create!app(
 		"mysql:host=" ~ env["DB_HOST"] ~ ";db_name=" ~ env["DB_NAME"], env["DB_USER"], env["DB_PASS"]
 	);
+
+	auto q = Person.find().order_by("name", Order.Asc);
+	q.all(con);
 
 	// sqlite://filepath?param=value
 
