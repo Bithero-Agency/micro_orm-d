@@ -84,8 +84,13 @@ class SelectQuery {
         return this;
     }
 
-    alias order_by_asc(string field) = order_by(field, Order.Asc);
-    alias order_by_desc(string field) = order_by(field, Order.Desc);
+    SelectQuery order_by_asc(string field) {
+        return order_by(field, Order.Asc);
+    }
+
+    SelectQuery order_by_desc(string field) {
+        return order_by(field, Order.Desc);
+    }
 
     @property const(Tuple!(string, Order)[]) orders() const {
         return this._orders;
