@@ -43,30 +43,29 @@ enum Order {
     Desc,
 }
 
-private template ImplSelectQuery(T) {
-    //T filter(string field, ) {
-    //    return this;
-    //}
+private template ImplSelectQuery(alias T) {
+    import std.traits : fullyQualifiedName;
+    static assert(__traits(hasMember, T, "MiniOrmModel"), "Cannot implement SelectQuery for type `" ~ fullyQualifiedName!T ~ "` which is no entity");
 
-    T order_by(string field, Order ord) {
+    SelectQuery!T order_by(string field, Order ord) {
         this._orders ~= Tuple!(string, Order)(field, ord);
         return this;
     }
 
-    T order_by_asc(string field) {
+    SelectQuery!T order_by_asc(string field) {
         return order_by(field, Order.Asc);
     }
 
-    T order_by_desc(string field) {
+    SelectQuery!T order_by_desc(string field) {
         return order_by(field, Order.Desc);
     }
 
-    T limit(size_t limit) {
+    SelectQuery!T limit(size_t limit) {
         this._limit = limit;
         return this;
     }
 
-    T offset(size_t offset) {
+    SelectQuery!T offset(size_t offset) {
         this._offset = offset;
         return this;
     }
@@ -123,7 +122,7 @@ class BaseSelectQuery {
 }
 
 /// Represents a select query
-class SelectQuery(T) : BaseSelectQuery {
+class SelectQuery(alias T) : BaseSelectQuery {
     this(
         string storageName, string connectionId,
         immutable(Field[]) fields, immutable(Field[]) primarykeys
@@ -131,7 +130,7 @@ class SelectQuery(T) : BaseSelectQuery {
         super(storageName, connectionId, fields, primarykeys);
     }
 
-    mixin ImplSelectQuery!(SelectQuery!T);
+    mixin ImplSelectQuery!T;
 
     private BaseSelectQuery toBase() {
         auto base = new BaseSelectQuery(storageName, connectionId, fields, primarykeys);
