@@ -381,7 +381,7 @@ class LibMariaDbBackend : Backend {
         MYSQL_RES* res = mysql_use_result(this.con);
         query_res.reserve(res.row_count);
 
-        while (all) {
+        while (true) {
             MYSQL_ROW row = mysql_fetch_row(res);
             if (row is null) { break; }
 

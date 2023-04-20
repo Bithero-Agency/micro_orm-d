@@ -25,6 +25,8 @@
 module micro_orm.queries.select;
 
 import micro_orm.entities.fields;
+import micro_orm.exceptions;
+import ministd.optional : Option;
 import std.typecons : Tuple;
 import std.variant : Variant;
 
@@ -200,4 +202,20 @@ class SelectQuery(alias T) : BaseSelectQuery {
         return entities;
     }
 
+    Option!T one(imported!"micro_orm".Connection con) {
+        auto query = this.toBase();
+        query._limit = 1;
+
+        auto results = con.backend.select(query, false);
+        if (results.length < 1) {
+            return Option!T.none();
+        }
+
+        if (results.length > 1) {
+            throw new MicroOrmException("Requested one but got multiple from backend");
+        }
+
+        auto entity = T.MicroOrmModel.from_query_result(results[0]);
+        return Option!T.some(entity);
+    }
 }
