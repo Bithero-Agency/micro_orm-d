@@ -28,6 +28,7 @@ module miniorm.entities;
 public import miniorm.entities.fields;
 public import miniorm.entities.id;
 import std.typecons : Tuple;
+import std.variant : Variant;
 
 struct Storage {
     string name;
@@ -43,9 +44,60 @@ enum Order {
     Desc,
 }
 
+enum Operation {
+    None,
+    Eq,
+}
+
+class Filter(alias T) {
+    alias Type = T;
+    private T _val;
+    private Operation _op;
+
+    this(Operation op, T val) {
+        this._op = op;
+        this._val = val;
+    }
+
+    @property T val() {
+        return this._val;
+    }
+
+    @property Operation op() {
+        return this._op;
+    }
+}
+
+private template ImplOperation(string funcname, string op) {
+    mixin(
+        "Filter!T " ~ funcname ~ "(T)(T val) {"
+            ~ "return new Filter!T(Operation." ~ op ~ ", val);"
+        ~ "}"
+    );
+}
+mixin ImplOperation!("eq", "Eq");
+
 private template ImplSelectQuery(alias T) {
-    import std.traits : fullyQualifiedName;
+    import std.traits : fullyQualifiedName, isInstanceOf;
     static assert(__traits(hasMember, T, "MiniOrmModel"), "Cannot implement SelectQuery for type `" ~ fullyQualifiedName!T ~ "` which is no entity");
+
+    SelectQuery!T filter(string field, U)(U filter)
+    if (isInstanceOf!(Filter, U))
+    {
+        enum col = T.MiniOrmModel.getColumnByName(field);
+        alias Ty = U.Type;
+        enum checked = compTimeCheckField!(Ty, col);
+
+        enum colIdx = T.MiniOrmModel.getColumnIndexByName(field);
+        _filters ~= Tuple!(int, Operation, Variant)(colIdx, filter.op, Variant(filter.val));
+        return this;
+    }
+
+    SelectQuery!T filter(string field, V)(V value)
+    if (!isInstanceOf!(Filter, V))
+    {
+        return this.filter!field(new Filter!V(Operation.Eq, value));
+    }
 
     SelectQuery!T order_by(string field, Order ord) {
         this._orders ~= Tuple!(string, Order)(field, ord);
@@ -77,6 +129,7 @@ class BaseSelectQuery {
         string _connectionId;
         immutable(Field[]) _fields;
         immutable(Field[]) _primarykeys;
+        Tuple!(int, Operation, Variant)[] _filters;
         Tuple!(string, Order)[] _orders;
         size_t _limit = 0;
         size_t _offset = 0;
@@ -108,6 +161,10 @@ class BaseSelectQuery {
         return this._primarykeys;
     }
 
+    @property const(Tuple!(int, Operation, Variant)[]) filters() const {
+        return this._filters;
+    }
+
     @property const(Tuple!(string, Order)[]) orders() const {
         return this._orders;
     }
@@ -134,6 +191,7 @@ class SelectQuery(alias T) : BaseSelectQuery {
 
     private BaseSelectQuery toBase() {
         auto base = new BaseSelectQuery(storageName, connectionId, fields, primarykeys);
+        base._filters = this._filters;
         base._orders = this._orders;
         base._limit = this._limit;
         base._offset = this._offset;
@@ -314,6 +372,24 @@ template BaseEntity(alias T)
             }
             mixin( FieldSetterGen!() );
             return res;
+        }
+
+        static immutable(ColumnInfo) getColumnByName(string name) {
+            foreach (col; Columns) {
+                if (col.name == name) {
+                    return col;
+                }
+            }
+            throw new MiniOrmFieldException("Unknown field: `" ~ name ~ "` for entity `" ~ fullyQualifiedName!T ~ "`");
+        }
+
+        static int getColumnIndexByName(string name) {
+            foreach (idx, col; Columns) {
+                if (col.name == name) {
+                    return cast(int) idx;
+                }
+            }
+            throw new MiniOrmFieldException("Unknown field: `" ~ name ~ "` for entity `" ~ fullyQualifiedName!T ~ "`");
         }
     }
 
