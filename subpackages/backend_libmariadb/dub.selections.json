@@ -1,6 +1,7 @@
 {
 	"fileVersion": 1,
 	"versions": {
+		"micro_orm": {"path":"../../"},
 		"ministd": "0.1.0"
 	}
 }

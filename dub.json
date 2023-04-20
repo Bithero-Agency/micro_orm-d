@@ -1,11 +1,14 @@
 {
-	"name": "micro_orm",
 	"authors": [
 		"Mai-Lapyst"
 	],
 	"copyright": "Copyright © 2023, Mai-Lapyst",
+	"dependencies": {
+		"ministd:optional": "~>0.1.0"
+	},
 	"description": "A minimal jet complete orm for dlang projects",
 	"license": "AGPL-3.0-or-later",
+	"name": "micro_orm",
 	"subPackages": [
 		"./subpackages/backend_libmariadb"
 	]
