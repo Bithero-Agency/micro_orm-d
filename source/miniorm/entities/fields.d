@@ -470,3 +470,77 @@ template mapFieldTypeFromNativeWithHint(alias T, Field hint) {
     }
 }
 
+template compTimeCheckField(alias T, Field field)
+{
+    import std.conv : to;
+    import std.traits : fullyQualifiedName;
+    enum FType = field.type;
+    enum ErrorMsgPre  = "Miniorm: Can only compare field `" ~ field.name ~ "` of type " ~ field.typeString() ~ " with values of type ";
+    enum ErrorMsgPost = ", but used type `" ~ fullyQualifiedName!T ~ "`";
+
+    debug (miniorm_compTimeCheckField) {
+        pragma(msg, "compTimeCheckField(T = ", T.stringof, ", field = ", field, ")");
+    }
+
+    static if (FType == FieldType.Char) {
+        static if (field.getSize() == 1) {
+            static assert(is(T == char), ErrorMsgPre ~ "char" ~ ErrorMsgPost);
+        }
+        else static if (field.getSize() == 2) {
+            static assert(is(T == wchar), ErrorMsgPre ~ "wchar" ~ ErrorMsgPost);
+        }
+        else static if (field.getSize() == 4) {
+            static assert(is(T == dchar), ErrorMsgPre ~ "dchar" ~ ErrorMsgPost);
+        }
+        else {
+            static assert(0, "Miniorm: Misconfigured Field found; invalid length " ~ to!string(field.getSize()) ~ " for fieldtype Char");
+        }
+    }
+    // TODO: String
+    // TODO: Text
+    else static if (isFieldTypeIntKind!FType) {
+        template IntImpl(args...) {
+            static if (args.length == 0) {
+                enum IntImpl = true;
+            } else {
+                alias intTy = args[0];
+                alias nativeTy = args[1];
+                static if (FType == intTy) {
+                    static assert(is(T == nativeTy), ErrorMsgPre ~ nativeTy.stringof ~ ErrorMsgPost);
+                    enum IntImpl = true;
+                } else {
+                    enum IntImpl = IntImpl!( args[2 .. $] );
+                }
+            }
+        }
+        enum __checked = IntImpl!(
+            FieldType.TinyInt, byte,
+            FieldType.TinyUInt, ubyte,
+            FieldType.SmallInt, short,
+            FieldType.SmallUInt, ushort,
+            FieldType.Int, int,
+            FieldType.UInt, uint,
+        );
+    }
+    else static if (FType == FieldType.Float) {
+        static assert(is(T == float), ErrorMsgPre ~ "float" ~ ErrorMsgPost);
+    }
+    else static if (FType == FieldType.Double) {
+        static assert(is(T == double), ErrorMsgPre ~ "double" ~ ErrorMsgPost);
+    }
+    // TODO: Decimal
+    // TODO: Binary, VarBinary
+    else static if (FType == FieldType.Bool) {
+        static assert(is(T == bool), ErrorMsgPre ~ "bool" ~ ErrorMsgPost);
+    }
+    // TODO: Money
+    // TODO: Json
+    // TODO: Uuid
+    // TODO: Enum, Custom
+    else {
+        static assert(0, "Unkown field type: " ~ to!string(FType));
+    }
+
+    // Needed so template has an effect
+    enum compTimeCheckField = true;
+}
