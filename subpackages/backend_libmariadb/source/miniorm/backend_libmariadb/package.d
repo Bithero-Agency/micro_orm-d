@@ -34,6 +34,7 @@ import miniorm.backend_libmariadb.mysql.mysql;
 import std.conv : to;
 import std.string : toStringz, split, join, replace;
 import std.algorithm : map;
+import std.variant : Variant;
 
 class MariadbException : MiniOrmException {
     mixin ExceptionInheritConstructors;
@@ -41,6 +42,50 @@ class MariadbException : MiniOrmException {
 
 private string quoteValue(string i) {
     return "'" ~ i.replace("'", "\\'") ~ "'";
+}
+
+private string quoteValue(FieldType type, Variant v) {
+    switch (type) {
+        case FieldType.Char: {
+            if (v.type() == typeid(char)) {
+                char c = v.get!char();
+                if (c == '\'') { return "'\''"; }
+                return "'" ~ c ~ "'";
+            }
+            else if (v.type() == typeid(wchar)) {
+                import std.digest : toHexString;
+                wchar ch = v.get!wchar();
+                ubyte* ptr = cast(ubyte*) &ch;
+                string res = "";
+                for (int i = 1; i >= 0; i--) {
+                    ubyte[] data = [ ptr[i] ];
+                    res ~= "\\x" ~ data.toHexString();
+                }
+                return "'" ~ res ~ "'";
+            }
+            // TODO: char(4) / dchar
+            // TODO: char(x)
+            break;
+        }
+        case FieldType.TinyInt: { return to!string(v.get!(byte)); }
+        case FieldType.TinyUInt: { return to!string(v.get!(ubyte)); }
+        case FieldType.SmallInt: { return to!string(v.get!(short)); }
+        case FieldType.SmallUInt: { return to!string(v.get!(ushort)); }
+        case FieldType.Int: { return to!string(v.get!(int)); }
+        case FieldType.UInt: { return to!string(v.get!(uint)); }
+        // TODO: BigInt
+        case FieldType.Float: { return to!string(v.get!(float)); }
+        case FieldType.Double: { return to!string(v.get!(double)); }
+        // TODO: Decimal
+        // TODO: Binary, VarBinary
+        // TODO: Bool
+        // TODO: Money
+        // TODO: Json
+        // TODO: Uuid
+        // TODO: Enum, Custom
+        default: {}
+    }
+    throw new MiniOrmException("Could not quote value...");
 }
 
 private string quoteName(string i) {
@@ -280,7 +325,25 @@ class LibMariaDbBackend : Backend {
             sql ~= quoteName(f.name);
         }
         sql ~= " FROM " ~ quoteName(query.storageName);
-        sql ~= " WHERE 1";
+        sql ~= " WHERE ";
+        if (query.filters.length > 0) {
+            foreach (idx, instance; query.filters) {
+                if (idx > 0) { sql ~= ","; }
+                ColumnInfo col = query.fields[instance[0]];
+                sql ~= quoteName(col.name);
+                final switch (instance[1]) {
+                    case Operation.None:
+                        throw new MiniOrmException("Operation.None is not allowed");
+
+                    case Operation.Eq:
+                        sql ~= " = " ~ quoteValue(col.type, instance[2]);
+                        break;
+                }
+            }
+        }
+        else {
+            sql ~= "1";
+        }
         if (query.orders.length > 0) {
             sql ~= " ORDER BY ";
             foreach (i, o; query.orders) {
