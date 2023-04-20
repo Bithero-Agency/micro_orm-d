@@ -4,11 +4,11 @@ import std.stdio;
 import core.stdc.stdio : printf;
 import std.string : toStringz;
 
-import miniorm.backend_libmariadb;
-import miniorm.backend_libmariadb.mysql.mysql;
+import micro_orm.backend_libmariadb;
+import micro_orm.backend_libmariadb.mysql.mysql;
 
-import miniorm;
-import miniorm.backend : QueryResult;
+import micro_orm;
+import micro_orm.backend : QueryResult;
 
 struct Other {}
 
@@ -36,7 +36,7 @@ class Person {
 
 	// static Person from_query_result(QueryResult data) {
 	// 	auto res = new Person();
-	// 	res.name = data.get!string( Person.MiniOrmModel.Columns[0] );
+	// 	res.name = data.get!string( Person.MicroOrmModel.Columns[0] );
 	// 	return res;
 	// }
 

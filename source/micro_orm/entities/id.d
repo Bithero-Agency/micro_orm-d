@@ -1,4 +1,4 @@
-module miniorm.entities.id;
+module micro_orm.entities.id;
 
 struct Id {}
 

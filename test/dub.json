@@ -5,10 +5,10 @@
 	"license": "AGPL-3.0-or-later",
 	"description": "Tests",
 	"dependencies": {
-		"miniorm": {
+		"micro_orm": {
 			"path": "../"
 		},
-		"miniorm:backend_libmariadb" : {
+		"micro_orm:backend_libmariadb" : {
 			"path": "../subpackages/backend_libmariadb"
 		}
 	}

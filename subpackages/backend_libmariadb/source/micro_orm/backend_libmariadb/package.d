@@ -16,27 +16,27 @@
  */
 
 /** 
- * Main module of the libmariadb backend for miniorm
+ * Main module of the libmariadb backend for micro_orm
  * 
  * License:   $(HTTP https://www.gnu.org/licenses/agpl-3.0.html, AGPL 3.0).
  * Copyright: Copyright (C) 2023 Mai-Lapyst
  * Authors:   $(HTTP codeark.it/Mai-Lapyst, Mai-Lapyst)
  */
 
-module miniorm.backend_libmariadb;
+module micro_orm.backend_libmariadb;
 
-import miniorm.backend;
-import miniorm.entities;
-import miniorm.exceptions;
+import micro_orm.backend;
+import micro_orm.entities;
+import micro_orm.exceptions;
 
-import miniorm.backend_libmariadb.mysql.mysql;
+import micro_orm.backend_libmariadb.mysql.mysql;
 
 import std.conv : to;
 import std.string : toStringz, split, join, replace;
 import std.algorithm : map;
 import std.variant : Variant;
 
-class MariadbException : MiniOrmException {
+class MariadbException : MicroOrmException {
     mixin ExceptionInheritConstructors;
 }
 
@@ -85,7 +85,7 @@ private string quoteValue(FieldType type, Variant v) {
         // TODO: Enum, Custom
         default: {}
     }
-    throw new MiniOrmException("Could not quote value...");
+    throw new MicroOrmException("Could not quote value...");
 }
 
 private string quoteName(string i) {
@@ -127,7 +127,7 @@ class LibMariaDbBackend : Backend {
 
     void connect(string dsn, string user, string passwd) {
         if (con !is null) {
-            throw new MiniOrmConnectionException("Connection already established!");
+            throw new MicroOrmConnectionException("Connection already established!");
         }
         con = mysql_init(null);
 
@@ -138,14 +138,14 @@ class LibMariaDbBackend : Backend {
             auto opt = raw_opt.split("=");
             auto key = opt[0];
             if (opt.length != 2) {
-                throw new MiniOrmConnectionException("Malformed option: '" ~ raw_opt ~ "'");
+                throw new MicroOrmConnectionException("Malformed option: '" ~ raw_opt ~ "'");
             }
             if (key == "host" || key == "hostname") {
                 if (unix_sock !is null) {
-                    throw new MiniOrmConnectionException("Cannot set 'hostname' when 'unix_sock' is already set");
+                    throw new MicroOrmConnectionException("Cannot set 'hostname' when 'unix_sock' is already set");
                 }
                 if (host !is null) {
-                    throw new MiniOrmConnectionException("Cannot set 'hostname' twice");
+                    throw new MicroOrmConnectionException("Cannot set 'hostname' twice");
                 }
                 host = toStringz(opt[1]);
             }
@@ -154,21 +154,21 @@ class LibMariaDbBackend : Backend {
             }
             else if (key == "db_name" || key == "db") {
                 if (db_name !is null) {
-                    throw new MiniOrmConnectionException("Cannot set 'db_name' twice");
+                    throw new MicroOrmConnectionException("Cannot set 'db_name' twice");
                 }
                 db_name = toStringz(opt[1]);
             }
             else if (key == "socket" || key == "unix_socket") {
                 if (host !is null) {
-                    throw new MiniOrmConnectionException("Cannot set 'unix_socket' when 'hostname' is already set");
+                    throw new MicroOrmConnectionException("Cannot set 'unix_socket' when 'hostname' is already set");
                 }
                 if (unix_sock !is null) {
-                    throw new MiniOrmConnectionException("Cannot set 'unix_socket' twice");
+                    throw new MicroOrmConnectionException("Cannot set 'unix_socket' twice");
                 }
                 unix_sock = toStringz(opt[1]);
             }
             else {
-                throw new MiniOrmConnectionException("Unknown option: '" ~ key ~ '"');
+                throw new MicroOrmConnectionException("Unknown option: '" ~ key ~ '"');
             }
         }
 
@@ -180,7 +180,7 @@ class LibMariaDbBackend : Backend {
         ) {
             auto err = mysql_error(con);
             mysql_close(con);
-            throw new MiniOrmConnectionException("Error while connection to server: '" ~ to!string(err) ~ '"');
+            throw new MicroOrmConnectionException("Error while connection to server: '" ~ to!string(err) ~ '"');
         }
     }
 
@@ -295,7 +295,7 @@ class LibMariaDbBackend : Backend {
         sql ~= ");";
         // TODO: somehow get metadata...
 
-        debug (miniorm_mariadb_createtable) {
+        debug (micro_orm_mariadb_createtable) {
             import std.stdio;
             writeln("[LibMariaDbBackend.create_table("~storageName~",...)]: sql to run:");
             writeln(sql);
@@ -333,7 +333,7 @@ class LibMariaDbBackend : Backend {
                 sql ~= quoteName(col.name);
                 final switch (instance[1]) {
                     case Operation.None:
-                        throw new MiniOrmException("Operation.None is not allowed");
+                        throw new MicroOrmException("Operation.None is not allowed");
 
                     case Operation.Eq:
                         sql ~= " = " ~ quoteValue(col.type, instance[2]);
@@ -366,14 +366,14 @@ class LibMariaDbBackend : Backend {
 
     QueryResult[] select(BaseSelectQuery query, bool all) {
         string sql = buildSelect(query);
-        debug (miniorm_mariadb_select) {
+        debug (micro_orm_mariadb_select) {
             import std.stdio;
             writeln("[LibMariaDbBackend.select()]: sql to run:");
             writeln(sql);
         }
 
         if (mysql_query(this.con, toStringz(sql))) {
-            throw new MiniOrmException("Error while quering: " ~ to!string(mysql_error(con)));
+            throw new MicroOrmException("Error while quering: " ~ to!string(mysql_error(con)));
         }
 
         QueryResult[] query_res;
@@ -381,7 +381,7 @@ class LibMariaDbBackend : Backend {
         MYSQL_RES* res = mysql_use_result(this.con);
         query_res.reserve(res.row_count);
 
-        while (true) {
+        while (all) {
             MYSQL_ROW row = mysql_fetch_row(res);
             if (row is null) { break; }
 

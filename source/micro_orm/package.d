@@ -23,11 +23,11 @@
  * Authors:   $(HTTP codeark.it/Mai-Lapyst, Mai-Lapyst)
  */
 
-module miniorm;
+module micro_orm;
 
-import miniorm.backend;
-public import miniorm.entities;
-import miniorm.exceptions;
+import micro_orm.backend;
+public import micro_orm.entities;
+import micro_orm.exceptions;
 
 import std.stdio;
 
@@ -62,7 +62,7 @@ class Connection {
         import std.algorithm : canFind;
 
         if (connectionIds.canFind(id)) {
-            throw new MiniOrmConnectionException("Cannot name a second connection '" ~ id ~ "'");
+            throw new MicroOrmConnectionException("Cannot name a second connection '" ~ id ~ "'");
         }
 
         Connection con = new Connection(id);
@@ -70,7 +70,7 @@ class Connection {
         import std.string : indexOf;
         auto i = dsn.indexOf(':');
         if (i < 0) {
-            throw new MiniOrmConnectionException(
+            throw new MicroOrmConnectionException(
                 "Malfromed dsn recieved: '" ~ dsn ~ "'; must be in format '<driver>:<driver specific>'"
             );
         }
@@ -80,7 +80,7 @@ class Connection {
         try {
             con.backend.connect(dsn[i+1 .. $], user, password);
         } catch (Exception e) {
-            throw new MiniOrmConnectionException("Failure in backend's connect() method: ", e);
+            throw new MicroOrmConnectionException("Failure in backend's connect() method: ", e);
         }
 
         foreach (mod; Modules) {
@@ -109,7 +109,7 @@ class Connection {
                     }
 
                     if (__connectionName == id) {
-                        enum __code = "imported!\"" ~ moduleName!member ~ "\"." ~ member.stringof ~ ".MiniOrmModel.ensurePresence(con);";
+                        enum __code = "imported!\"" ~ moduleName!member ~ "\"." ~ member.stringof ~ ".MicroOrmModel.ensurePresence(con);";
                         mixin(__code);
                     }
                 }
@@ -130,7 +130,7 @@ class Connection {
 //}
 //
 //Connection createConnection(string name, string driver, string dsn) {
-//    if (__traits(compiles, "import miniorm.backend_" ~ driver ~ ";")) {
+//    if (__traits(compiles, "import micro_orm.backend_" ~ driver ~ ";")) {
 //        assert (0, "Cannot create connection: driver could not be found");
 //    }
 //    //return new Connection();

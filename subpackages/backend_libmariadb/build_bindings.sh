@@ -3,7 +3,7 @@
 DSTEP=~/projects/github/dstep/bin/dstep
 DEBUG_TRANSFORMS=false
 
-cd source/miniorm/backend_libmariadb
+cd source/micro_orm/backend_libmariadb
 
 SKIP_MYSQL_H_SYMS="\
     my_bool my_ulonglong STDCALL my_socket \
@@ -63,8 +63,8 @@ add_prelude() {
     echo "$prelude" | cat - $file > temp && mv temp $file
 }
 
-PACKAGE="--package miniorm.backend_libmariadb.mysql"
-IMPORT="--global-import miniorm.backend_libmariadb.mysql.mysql"
+PACKAGE="--package micro_orm.backend_libmariadb.mysql"
+IMPORT="--global-import micro_orm.backend_libmariadb.mysql.mysql"
 
 FORCE_REBUILD=false
 
@@ -127,13 +127,13 @@ cleanup_if_needed "$NEEDS_MARIADB_STMT_H" "mariadb_stmt.d"
 if $NEEDS_MYSQL_H; then
     echo "translate mysql.h ..."
     $DSTEP /usr/include/mysql/mysql.h -o ./mysql/mysql.d
-    sed -i 's/^externimport core.stdc.config;$/module miniorm.backend_libmariadb.mysql.mysql;\n\nimport core.stdc.config;/' ./mysql/mysql.d
+    sed -i 's/^externimport core.stdc.config;$/module micro_orm.backend_libmariadb.mysql.mysql;\n\nimport core.stdc.config;/' ./mysql/mysql.d
     MYSQL_H_IMPORTS="\
-    public import miniorm.backend_libmariadb.mysql.mariadb_com;\n\
-    public import miniorm.backend_libmariadb.mysql.mariadb_version;\n\
-    public import miniorm.backend_libmariadb.mysql.ma_list;\n\
-    public import miniorm.backend_libmariadb.mysql.mariadb_ctype;\n\
-    public import miniorm.backend_libmariadb.mysql.mariadb_stmt;\
+    public import micro_orm.backend_libmariadb.mysql.mariadb_com;\n\
+    public import micro_orm.backend_libmariadb.mysql.mariadb_version;\n\
+    public import micro_orm.backend_libmariadb.mysql.ma_list;\n\
+    public import micro_orm.backend_libmariadb.mysql.mariadb_ctype;\n\
+    public import micro_orm.backend_libmariadb.mysql.mariadb_stmt;\
     "
     sed -i "s/^ (C):$/$MYSQL_H_IMPORTS\n\nextern (C):/" ./mysql/mysql.d
 
@@ -163,8 +163,8 @@ if $NEEDS_MARIADB_COM_H; then
     sed -i 's/1ULL/1UL/g' ./mysql/mariadb_com.d
 
     MARIADB_COM_HEADER="\
-    module miniorm.backend_libmariadb.mysql.mariadb_com;\n\n\
-    import miniorm.backend_libmariadb.mysql.mysql : my_socket, my_bool;\n\n\
+    module micro_orm.backend_libmariadb.mysql.mariadb_com;\n\n\
+    import micro_orm.backend_libmariadb.mysql.mysql : my_socket, my_bool;\n\n\
     extern (C):\
     "
     sed -i "s/^extern (C):/$MARIADB_COM_HEADER/" ./mysql/mariadb_com.d
@@ -195,7 +195,7 @@ if $NEEDS_MARIADB_CTYPE_H; then
     add_prelude './mariadb_ctype.h' '#include <stddef.h>'
     $DSTEP ./mariadb_ctype.h -o ./mysql/mariadb_ctype.d
     MARIADB_CTYPE_HEADER="\
-    module miniorm.backend_libmariadb.mysql.mariadb_ctype;\n\n\
+    module micro_orm.backend_libmariadb.mysql.mariadb_ctype;\n\n\
     extern (C):\
     "
     sed -i "s/^extern (C):/$MARIADB_CTYPE_HEADER/" ./mysql/mariadb_ctype.d
@@ -211,7 +211,7 @@ if $NEEDS_MA_LIST_H; then
     cp /usr/include/mysql/ma_list.h .
     $DSTEP ./ma_list.h -o ./mysql/ma_list.d
     MA_LIST_HEADER="\
-    module miniorm.backend_libmariadb.mysql.ma_list;\n\n\
+    module micro_orm.backend_libmariadb.mysql.ma_list;\n\n\
     extern (C):\
     "
     sed -i "s/^extern (C):/$MA_LIST_HEADER/" ./mysql/ma_list.d

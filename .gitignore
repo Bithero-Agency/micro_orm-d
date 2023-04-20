@@ -2,13 +2,13 @@
 docs.json
 __dummy.html
 docs/
-/miniorm
+/micro_orm
 **/*.so
 **/*.dylib
 **/*.dll
 **/*.a
 **/*.lib
-miniorm-test-*
+micro_orm-test-*
 test/test
 *.exe
 *.pdb

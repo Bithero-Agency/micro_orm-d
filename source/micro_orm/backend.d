@@ -23,10 +23,10 @@
  * Authors:   $(HTTP codeark.it/Mai-Lapyst, Mai-Lapyst)
  */
 
-module miniorm.backend;
+module micro_orm.backend;
 
-import miniorm.entities : ColumnInfo, BaseSelectQuery;
-import miniorm.exceptions : MiniOrmException;
+import micro_orm.entities : ColumnInfo, BaseSelectQuery;
+import micro_orm.exceptions : MicroOrmException;
 
 interface Schema {
     Backend getBackend();
@@ -72,9 +72,9 @@ interface Backend {
     //Schema defaultSchema();
 }
 
-class NoSuchBackendException : MiniOrmException {
+class NoSuchBackendException : MicroOrmException {
     this(string name) {
-        super("Could not find miniorm-backend '" ~ name ~ "'");
+        super("Could not find micro_orm-backend '" ~ name ~ "'");
     }
 }
 
@@ -96,9 +96,9 @@ class BackendRegistry {
     }
 
     synchronized void register(alias BackendClass)(string name) {
-        debug (miniorm_backend_register) {
+        debug (micro_orm_backend_register) {
             import std.stdio;
-            writeln("[miniorm.backend.BackendRegistry] registering '", name, "' backend");
+            writeln("[micro_orm.backend.BackendRegistry] registering '", name, "' backend");
         }
         import std.traits;
         constructors[name] = () {
@@ -120,7 +120,7 @@ class BackendRegistry {
 
 template RegisterBackend(string name, alias BackendClass) {
     import std.traits;
-    pragma(msg, "Registering miniorm backend '" ~ name ~ "' with type ", fullyQualifiedName!BackendClass);
+    pragma(msg, "Registering micro_orm backend '" ~ name ~ "' with type ", fullyQualifiedName!BackendClass);
 
     static this() {
         BackendRegistry.instance().register!BackendClass(name);

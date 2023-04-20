@@ -23,10 +23,10 @@
  * Authors:   $(HTTP codeark.it/Mai-Lapyst, Mai-Lapyst)
  */
 
-module miniorm.entities;
+module micro_orm.entities;
 
-public import miniorm.entities.fields;
-public import miniorm.entities.id;
+public import micro_orm.entities.fields;
+public import micro_orm.entities.id;
 import std.typecons : Tuple;
 import std.variant : Variant;
 
@@ -79,16 +79,16 @@ mixin ImplOperation!("eq", "Eq");
 
 private template ImplSelectQuery(alias T) {
     import std.traits : fullyQualifiedName, isInstanceOf;
-    static assert(__traits(hasMember, T, "MiniOrmModel"), "Cannot implement SelectQuery for type `" ~ fullyQualifiedName!T ~ "` which is no entity");
+    static assert(__traits(hasMember, T, "MicroOrmModel"), "Cannot implement SelectQuery for type `" ~ fullyQualifiedName!T ~ "` which is no entity");
 
     SelectQuery!T filter(string field, U)(U filter)
     if (isInstanceOf!(Filter, U))
     {
-        enum col = T.MiniOrmModel.getColumnByName(field);
+        enum col = T.MicroOrmModel.getColumnByName(field);
         alias Ty = U.Type;
         enum checked = compTimeCheckField!(Ty, col);
 
-        enum colIdx = T.MiniOrmModel.getColumnIndexByName(field);
+        enum colIdx = T.MicroOrmModel.getColumnIndexByName(field);
         _filters ~= Tuple!(int, Operation, Variant)(colIdx, filter.op, Variant(filter.val));
         return this;
     }
@@ -198,14 +198,14 @@ class SelectQuery(alias T) : BaseSelectQuery {
         return base;
     }
 
-    T[] all(imported!"miniorm".Connection con) {
+    T[] all(imported!"micro_orm".Connection con) {
         auto results = con.backend.select(this.toBase(), true);
 
         T[] entities;
         entities.reserve(results.length);
 
         foreach (res; results) {
-            entities ~= T.MiniOrmModel.from_query_result(res);
+            entities ~= T.MicroOrmModel.from_query_result(res);
         }
 
         return entities;
@@ -235,11 +235,11 @@ alias ColumnInfo = Field;
 
 template BaseEntity(alias T)
 {
-    import miniorm.lazylist;
-    import miniorm.exceptions;
+    import micro_orm.lazylist;
+    import micro_orm.exceptions;
 
     /// Contains the Model data of the Entity
-    struct MiniOrmModel {
+    struct MicroOrmModel {
         import std.traits;
 
         pragma(msg, "Build entity `" ~ fullyQualifiedName!T ~ "`");
@@ -268,7 +268,7 @@ template BaseEntity(alias T)
 
         // go through all field and create the column infos
         private template ColumnGen(size_t i = 0) {
-            import miniorm.entities.fields;
+            import micro_orm.entities.fields;
 
             static if (i == fieldNames.length) {
                 enum ColumnGen = "";
@@ -311,7 +311,7 @@ template BaseEntity(alias T)
                 }
 
                 enum ColumnGen =
-                    "imported!\"miniorm.entities\".ColumnInfo("
+                    "imported!\"micro_orm.entities\".ColumnInfo("
                         ~ "\"" ~ Name ~ "\","
                         ~ Type
                     ~ ")," ~ ColumnGen!(i+1);
@@ -346,11 +346,11 @@ template BaseEntity(alias T)
         /// Function that's been called on an database connection to ensure the presence of the entity.
         /// It also validates the structure and yields an error if the entity schema on the remote
         /// dosnt matches the one declared.
-        static void ensurePresence(imported!"miniorm".Connection con) {
+        static void ensurePresence(imported!"micro_orm".Connection con) {
             con.backend.ensurePresence(StorageName, Columns, PrimaryKeys);
         }
 
-        import miniorm.backend : QueryResult;
+        import micro_orm.backend : QueryResult;
         static T from_query_result(QueryResult data) {
             auto res = new T();
             template FieldSetterGen(size_t i = 0) {
@@ -380,7 +380,7 @@ template BaseEntity(alias T)
                     return col;
                 }
             }
-            throw new MiniOrmFieldException("Unknown field: `" ~ name ~ "` for entity `" ~ fullyQualifiedName!T ~ "`");
+            throw new MicroOrmFieldException("Unknown field: `" ~ name ~ "` for entity `" ~ fullyQualifiedName!T ~ "`");
         }
 
         static int getColumnIndexByName(string name) {
@@ -389,16 +389,16 @@ template BaseEntity(alias T)
                     return cast(int) idx;
                 }
             }
-            throw new MiniOrmFieldException("Unknown field: `" ~ name ~ "` for entity `" ~ fullyQualifiedName!T ~ "`");
+            throw new MicroOrmFieldException("Unknown field: `" ~ name ~ "` for entity `" ~ fullyQualifiedName!T ~ "`");
         }
     }
 
-    void save(imported!"miniorm".Connection con) {
+    void save(imported!"micro_orm".Connection con) {
         import std.traits : fullyQualifiedName;
-        if (con.id != MiniOrmModel.ConnectionName) {
-            throw new MiniOrmException(
+        if (con.id != MicroOrmModel.ConnectionName) {
+            throw new MicroOrmException(
                 "Cannot save entity of type `" ~ fullyQualifiedName!T ~ "`"
-                    ~ " which requires the connection-id `" ~ MiniOrmModel.ConnectionName ~ "`"
+                    ~ " which requires the connection-id `" ~ MicroOrmModel.ConnectionName ~ "`"
                     ~ " onto a connection that has a id of `" ~ con.id ~ "`"
             );
         }
@@ -407,8 +407,8 @@ template BaseEntity(alias T)
     static SelectQuery!T find() {
         import std.stdio;
         return new SelectQuery!T(
-            MiniOrmModel.StorageName, MiniOrmModel.ConnectionName,
-            MiniOrmModel.Columns, MiniOrmModel.PrimaryKeys
+            MicroOrmModel.StorageName, MicroOrmModel.ConnectionName,
+            MicroOrmModel.Columns, MicroOrmModel.PrimaryKeys
         );
     }
 

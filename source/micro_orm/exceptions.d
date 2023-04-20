@@ -1,4 +1,4 @@
-module miniorm.exceptions;
+module micro_orm.exceptions;
 
 template ExceptionInheritConstructors() {
     @nogc @safe pure nothrow this(string msg, string file = __FILE__, size_t line = __LINE__, Throwable nextInChain = null) {
@@ -10,14 +10,14 @@ template ExceptionInheritConstructors() {
     }
 }
 
-class MiniOrmException : Exception {
+class MicroOrmException : Exception {
     mixin ExceptionInheritConstructors;
 }
 
-class MiniOrmConnectionException : MiniOrmException {
+class MicroOrmConnectionException : MicroOrmException {
     mixin ExceptionInheritConstructors;
 }
 
-class MiniOrmFieldException : MiniOrmException {
+class MicroOrmFieldException : MicroOrmException {
     mixin ExceptionInheritConstructors;
 }

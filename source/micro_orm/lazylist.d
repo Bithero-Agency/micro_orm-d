@@ -1,4 +1,4 @@
-module miniorm.lazylist;
+module micro_orm.lazylist;
 
 import std.container : DList;
 

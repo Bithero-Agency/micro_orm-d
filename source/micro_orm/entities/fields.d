@@ -1,7 +1,7 @@
-module miniorm.entities.fields;
+module micro_orm.entities.fields;
 
 import std.typecons : Tuple;
-import miniorm.exceptions;
+import micro_orm.exceptions;
 
 // https://dlang.org/spec/type.html#basic-data-types
 
@@ -150,7 +150,7 @@ struct Field {
     this(FieldType ty) {
         switch (ty) {
             case FieldType.VarBinary:
-                throw new MiniOrmFieldException("Fieldtype `VarBinary` needs an mandatiory `size_t` as length");
+                throw new MicroOrmFieldException("Fieldtype `VarBinary` needs an mandatiory `size_t` as length");
             default:
                 this.ty = ty;
                 break;
@@ -167,7 +167,7 @@ struct Field {
 
     private void assertHasData() const {
         if (!has_data) {
-            throw new MiniOrmFieldException("Cannot get data: no data set");
+            throw new MicroOrmFieldException("Cannot get data: no data set");
         }
     }
 
@@ -199,7 +199,7 @@ struct Field {
                 break;
             default:
                 import std.conv : to;
-                throw new MiniOrmFieldException("Fieldtype `" ~ to!string(ty) ~ "` dosn't accepts a single `size_t` as data");
+                throw new MicroOrmFieldException("Fieldtype `" ~ to!string(ty) ~ "` dosn't accepts a single `size_t` as data");
         }
     }
 
@@ -222,7 +222,7 @@ struct Field {
                 return this.sz;
             default:
                 import std.conv : to;
-                throw new MiniOrmFieldException("Fieldtype `" ~ to!string(ty) ~ "` dosn't supports a single `size_t` as data");
+                throw new MicroOrmFieldException("Fieldtype `" ~ to!string(ty) ~ "` dosn't supports a single `size_t` as data");
         }
     }
 
@@ -243,7 +243,7 @@ struct Field {
 
     this(FieldType ty, BlobSize blobsz) {
         if (ty != FieldType.Binary) {
-            throw new MiniOrmFieldException("Can only set an `BlobSize` when using `FieldType.Binary`");
+            throw new MicroOrmFieldException("Can only set an `BlobSize` when using `FieldType.Binary`");
         }
         this.ty = ty;
         this.has_data = true;
@@ -253,7 +253,7 @@ struct Field {
     BlobSize getBlobSize() const {
         assertHasData();
         if (this.ty != FieldType.Binary) {
-            throw new MiniOrmFieldException("Can only get `BlobSize` data on a `FieldType.Binary`");
+            throw new MicroOrmFieldException("Can only get `BlobSize` data on a `FieldType.Binary`");
         }
         return this.blobsz;
     }
@@ -271,7 +271,7 @@ struct Field {
 
     this(FieldType ty, string fqn) {
         if (ty != FieldType.Custom) {
-            throw new MiniOrmFieldException("Can only set an fqn when using `FieldType.Custom`");
+            throw new MicroOrmFieldException("Can only set an fqn when using `FieldType.Custom`");
         }
         this.ty = ty;
         this.has_data = true;
@@ -281,7 +281,7 @@ struct Field {
     string getFqn() const {
         assertHasData();
         if (this.ty != FieldType.Custom) {
-            throw new MiniOrmFieldException("Can only get fqn on a `FieldType.Custom`");
+            throw new MicroOrmFieldException("Can only get fqn on a `FieldType.Custom`");
         }
         return this.fqn;
     }
@@ -303,7 +303,7 @@ struct Field {
 
     this(FieldType ty, string[] variants) {
         if (ty != FieldType.Enum) {
-            throw new MiniOrmFieldException("Can only set variants when using `FieldType.Enum`");
+            throw new MicroOrmFieldException("Can only set variants when using `FieldType.Enum`");
         }
         this.ty = ty;
         this.has_data = true;
@@ -313,7 +313,7 @@ struct Field {
     const(string[]) getVariants() const {
         assertHasData();
         if (this.ty != FieldType.Enum) {
-            throw new MiniOrmFieldException("Can only get variants on a `FieldType.Enum`");
+            throw new MicroOrmFieldException("Can only get variants on a `FieldType.Enum`");
         }
         return this.variants;
     }
@@ -335,7 +335,7 @@ struct Field {
                 break;
             default:
                 import std.conv : to;
-                throw new MiniOrmFieldException("Fieldtype `" ~ to!string(ty) ~ "` dosn't accepts a `Tuple!(size_t, size_t)` as data");
+                throw new MicroOrmFieldException("Fieldtype `" ~ to!string(ty) ~ "` dosn't accepts a `Tuple!(size_t, size_t)` as data");
         }
     }
 
@@ -347,7 +347,7 @@ struct Field {
                 return this.prec_scale;
             default:
                 import std.conv : to;
-                throw new MiniOrmFieldException("Fieldtype `" ~ to!string(ty) ~ "` dosn't supports `Tuple!(size_t, size_t)` as data");
+                throw new MicroOrmFieldException("Fieldtype `" ~ to!string(ty) ~ "` dosn't supports `Tuple!(size_t, size_t)` as data");
         }
     }
 
@@ -376,7 +376,7 @@ template mapFieldTypeFromNative(alias T) {
         enum mapFieldTypeFromNative = "FieldType.Enum, [" ~ Impl!() ~ "]";
     }
     else static if (is(T == union) || is(T == interface)) {
-        static assert(0, "MiniOrm: Cannot map fieldtype `" ~ T.stringof ~ "`, union and interfaces arent supported");
+        static assert(0, "MicroOrm: Cannot map fieldtype `" ~ T.stringof ~ "`, union and interfaces arent supported");
     }
     else static if (is(T == char)) { enum mapFieldTypeFromNative = "FieldType.Char, 1"; }
     else static if (is(T == wchar)) { enum mapFieldTypeFromNative = "FieldType.Char, 2"; }
@@ -391,7 +391,7 @@ template mapFieldTypeFromNative(alias T) {
     // TODO: long & ulong (64bit)
     // TODO: cent & ucent (128bit)
     else {
-        static assert(0, "MiniOrm: Cannot map unknown fieldtype `" ~ T.stringof ~ "`");
+        static assert(0, "MicroOrm: Cannot map unknown fieldtype `" ~ T.stringof ~ "`");
     }
 }
 
@@ -408,18 +408,18 @@ template mapFieldTypeFromNativeWithHint(alias T, Field hint) {
 
     enum HintType = hint.type;
 
-    static assert(HintType != FieldType.None, "Miniorm: fieldhint with `FieldType.None` is not allowed");
+    static assert(HintType != FieldType.None, "MicroOrm: fieldhint with `FieldType.None` is not allowed");
     static if (HintType == FieldType.Char) {
         // TODO: wchar (16bit / len 2) & dchar (32bit / len 4)
-        static assert(is(T == char), "Miniorm: can only use `FieldType.Char` when member is of type `char`");
+        static assert(is(T == char), "MicroOrm: can only use `FieldType.Char` when member is of type `char`");
         enum mapFieldTypeFromNativeWithHint = "FieldType.Char, " ~ to!string(hint.getSize());
     }
     else static if (HintType == FieldType.String) {
-        static assert(is(T == string), "Miniorm: can only use `FieldType.String` when member is of type `string`");
+        static assert(is(T == string), "MicroOrm: can only use `FieldType.String` when member is of type `string`");
         enum mapFieldTypeFromNativeWithHint = "FieldType.String, " ~ to!string(hint.getSize());
     }
     else static if (HintType == FieldType.Text) {
-        static assert(is(T == string), "Miniorm: can only use `FieldType.Text` when member is of type `string`");
+        static assert(is(T == string), "MicroOrm: can only use `FieldType.Text` when member is of type `string`");
         enum mapFieldTypeFromNativeWithHint = "FieldType.String";
     }
     else static if (isFieldTypeIntKind!(HintType)) {
@@ -430,7 +430,7 @@ template mapFieldTypeFromNativeWithHint(alias T, Field hint) {
                 alias intTy = args[0];
                 alias nativeTy = args[1];
                 static if (HintType == intTy) {
-                    static assert(is(T == nativeTy), "Miniorm: can only use `" ~ intTy.stringof ~ "` when member is of type `" ~ nativeTy.stringof ~ "`");
+                    static assert(is(T == nativeTy), "MicroOrm: can only use `" ~ intTy.stringof ~ "` when member is of type `" ~ nativeTy.stringof ~ "`");
                     enum IntImpl = "FieldType." ~ intTy.stringof ~ ", " ~ to!string(hint.getSize());
                 } else {
                     enum IntImpl = IntImpl!( args[2 .. $] );
@@ -448,17 +448,17 @@ template mapFieldTypeFromNativeWithHint(alias T, Field hint) {
         // TODO: BigInt
     }
     else static if (HintType == FieldType.Float) {
-        static assert(is(T == float), "Miniorm: can only use `FieldType.Float` when member is of type `float`");
+        static assert(is(T == float), "MicroOrm: can only use `FieldType.Float` when member is of type `float`");
         enum mapFieldTypeFromNativeWithHint = "FieldType.Float, " ~ to!string(hint.getSize());
     }
     else static if (HintType == FieldType.Double) {
-        static assert(is(T == double), "Miniorm: can only use `FieldType.Double` when member is of type `double`");
+        static assert(is(T == double), "MicroOrm: can only use `FieldType.Double` when member is of type `double`");
         enum mapFieldTypeFromNativeWithHint = "FieldType.Double, " ~ to!string(hint.getSize());
     }
     // TODO: Decimal
     // TODO: Binary, VarBinary
     else static if (HintType == FieldType.Bool) {
-        static assert(is(T == bool), "Miniorm: can only use `FieldType.Bool` when member is of type `bool`");
+        static assert(is(T == bool), "MicroOrm: can only use `FieldType.Bool` when member is of type `bool`");
         enum mapFieldTypeFromNativeWithHint = "FieldType.Bool";
     }
     // TODO: Money
@@ -467,7 +467,7 @@ template mapFieldTypeFromNativeWithHint(alias T, Field hint) {
     // TODO: Enum
     // TODO: Custom
     else {
-        static assert(0, "Miniorm: Unknown fieldtype hint: `" ~ to!string(hint.type) ~ "`");
+        static assert(0, "MicroOrm: Unknown fieldtype hint: `" ~ to!string(hint.type) ~ "`");
     }
 }
 
@@ -476,10 +476,10 @@ template compTimeCheckField(alias T, Field field)
     import std.conv : to;
     import std.traits : fullyQualifiedName;
     enum FType = field.type;
-    enum ErrorMsgPre  = "Miniorm: Can only compare field `" ~ field.name ~ "` of type " ~ field.typeString() ~ " with values of type ";
+    enum ErrorMsgPre  = "MicroOrm: Can only compare field `" ~ field.name ~ "` of type " ~ field.typeString() ~ " with values of type ";
     enum ErrorMsgPost = ", but used type `" ~ fullyQualifiedName!T ~ "`";
 
-    debug (miniorm_compTimeCheckField) {
+    debug (micro_orm_compTimeCheckField) {
         pragma(msg, "compTimeCheckField(T = ", T.stringof, ", field = ", field, ")");
     }
 
@@ -494,7 +494,7 @@ template compTimeCheckField(alias T, Field field)
             static assert(is(T == dchar), ErrorMsgPre ~ "dchar" ~ ErrorMsgPost);
         }
         else {
-            static assert(0, "Miniorm: Misconfigured Field found; invalid length " ~ to!string(field.getSize()) ~ " for fieldtype Char");
+            static assert(0, "MicroOrm: Misconfigured Field found; invalid length " ~ to!string(field.getSize()) ~ " for fieldtype Char");
         }
     }
     // TODO: String
