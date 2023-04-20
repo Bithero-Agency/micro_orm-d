@@ -60,6 +60,82 @@ struct Field {
         Tuple!(size_t, size_t) prec_scale;
     }
 
+    string typeString() {
+        import std.conv : to;
+
+        enum ImplSzType(FieldType ty) =
+            "case " ~ ty.stringof ~ ": {" ~
+            " if (has_data) { return \"" ~ to!string(ty) ~ "(\" ~ to!string(sz) ~ \")\"; }" ~
+            " else { return \"" ~ to!string(ty) ~ "\"; }" ~
+            "}"
+        ;
+
+        switch (ty) {
+            default: { return "Unknown"; }
+
+            mixin( ImplSzType!(FieldType.Char) );
+            mixin( ImplSzType!(FieldType.String) );
+            case FieldType.Text: { return "Text"; }
+
+            mixin( ImplSzType!(FieldType.TinyInt) );
+            mixin( ImplSzType!(FieldType.TinyUInt) );
+            mixin( ImplSzType!(FieldType.SmallInt) );
+            mixin( ImplSzType!(FieldType.SmallUInt) );
+            mixin( ImplSzType!(FieldType.Int) );
+            mixin( ImplSzType!(FieldType.UInt) );
+            mixin( ImplSzType!(FieldType.BigInt) );
+            mixin( ImplSzType!(FieldType.BigUInt) );
+
+            mixin( ImplSzType!(FieldType.Float) );
+            mixin( ImplSzType!(FieldType.Double) );
+
+            case FieldType.Decimal: {
+                if (has_data) {
+                    return "Decimal(" ~ to!string(prec_scale[0]) ~ ", " ~ to!string(prec_scale[1]) ~ ")";
+                } else {
+                    return "Decimal";
+                }
+            }
+
+            case FieldType.Binary: {
+                if (has_data) {
+                    return "Binary(" ~ to!string(blobsz) ~ ")";
+                } else {
+                    return "Binary";
+                }
+            }
+            case FieldType.VarBinary: { return "VarBinary(" ~ to!string(sz) ~ ")"; }
+
+            case FieldType.Bool: { return "Bool"; }
+
+            case FieldType.Money: {
+                if (has_data) {
+                    return "Money(" ~ to!string(prec_scale[0]) ~ ", " ~ to!string(prec_scale[1]) ~ ")";
+                } else {
+                    return "Money";
+                }
+            }
+
+            case FieldType.Json: { return "Json"; }
+            case FieldType.Uuid: { return "Uuid"; }
+
+            case FieldType.Enum: {
+                if (has_data) {
+                    return "Enum(" ~ to!string(variants) ~ ")";
+                } else {
+                    return "Enum";
+                }
+            }
+            case FieldType.Custom: {
+                if (has_data) {
+                    return "Custom(" ~ fqn ~ ")";
+                } else {
+                    return "Custom";
+                }
+            }
+        }
+    }
+
     // ----- Generic
 
     this(string name) {
