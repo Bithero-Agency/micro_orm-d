@@ -445,6 +445,7 @@ template mapFieldTypeFromNativeWithHint(alias T, Field hint) {
             FieldType.Int, int,
             FieldType.UInt, uint,
         );
+        // TODO: BigInt
     }
     else static if (HintType == FieldType.Float) {
         static assert(is(T == float), "Miniorm: can only use `FieldType.Float` when member is of type `float`");
@@ -521,6 +522,7 @@ template compTimeCheckField(alias T, Field field)
             FieldType.Int, int,
             FieldType.UInt, uint,
         );
+        // TODO: BigInt
     }
     else static if (FType == FieldType.Float) {
         static assert(is(T == float), ErrorMsgPre ~ "float" ~ ErrorMsgPost);
