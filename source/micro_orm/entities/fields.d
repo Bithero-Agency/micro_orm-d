@@ -497,7 +497,9 @@ template compTimeCheckField(alias T, Field field)
             static assert(0, "MicroOrm: Misconfigured Field found; invalid length " ~ to!string(field.getSize()) ~ " for fieldtype Char");
         }
     }
-    // TODO: String
+    else static if (FType == FieldType.String) {
+        static assert(is(T == string), ErrorMsgPre ~ "string" ~ ErrorMsgPost);
+    }
     // TODO: Text
     else static if (isFieldTypeIntKind!FType) {
         template IntImpl(args...) {

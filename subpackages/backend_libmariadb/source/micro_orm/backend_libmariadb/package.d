@@ -67,6 +67,8 @@ private string quoteValue(FieldType type, Variant v) {
             // TODO: char(x)
             break;
         }
+        case FieldType.String: { return quoteValue(v.get!string()); }
+        // TODO: Text
         case FieldType.TinyInt: { return to!string(v.get!(byte)); }
         case FieldType.TinyUInt: { return to!string(v.get!(ubyte)); }
         case FieldType.SmallInt: { return to!string(v.get!(short)); }
