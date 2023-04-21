@@ -253,6 +253,25 @@ template BaseEntity(alias T)
         pragma(msg, " - Generated Id Filters: |", GenIdFilters!(), "|");
     }
 
+    BaseInsertQuery insert() {
+        import std.variant : Variant;
+        import std.conv : to;
+        Variant[] values;
+        values.reserve( MicroOrmModel.Columns.length );
+        static foreach (col; MicroOrmModel.Columns) {
+            static if (col.type == FieldType.Enum) {
+                mixin( "values ~= Variant(to!string( this." ~ col.name ~ " ));" );
+            } else {
+                mixin( "values ~= Variant( this." ~ col.name ~ " );" );
+            }
+        }
+        return new BaseInsertQuery(
+            MicroOrmModel.StorageName, MicroOrmModel.ConnectionName,
+            MicroOrmModel.Columns, MicroOrmModel.PrimaryKeys,
+            values
+        );
+    }
+
     void save(imported!"micro_orm".Connection con) {
         import std.traits : fullyQualifiedName;
         if (con.id != MicroOrmModel.ConnectionName) {

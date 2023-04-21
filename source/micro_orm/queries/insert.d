@@ -26,6 +26,7 @@ module micro_orm.queries.insert;
 
 import micro_orm.entities.fields;
 import micro_orm.exceptions;
+import micro_orm : Connection;
 import std.variant : Variant;
 
 class BaseInsertQuery {
@@ -40,12 +41,14 @@ class BaseInsertQuery {
 
     this(
         string storageName, string connectionId,
-        immutable(Field[]) fields, immutable(Field[]) primarykeys
+        immutable(Field[]) fields, immutable(Field[]) primarykeys,
+        Variant[] values = [],
     ) {
         this._storageName = storageName;
         this._connectionId = connectionId;
         this._fields = fields;
         this._primarykeys = primarykeys;
+        this._values = values;
     }
 
     @property string storageName() const {
@@ -66,5 +69,9 @@ class BaseInsertQuery {
 
     @property const(Variant[]) values() const {
         return this._values;
+    }
+
+    void exec(Connection con) {
+        con.backend.insert(this);
     }
 }
