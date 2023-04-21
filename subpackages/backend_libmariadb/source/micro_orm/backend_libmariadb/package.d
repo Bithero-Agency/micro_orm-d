@@ -477,6 +477,8 @@ class LibMariaDbBackend : Backend {
             throw new MicroOrmException("Error while quering: " ~ to!string(mysql_error(con)));
         }
     }
+
+    void del(BaseDeleteQuery query) {}
 }
 
 mixin RegisterBackend!("mariadb", LibMariaDbBackend);

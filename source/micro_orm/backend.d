@@ -71,6 +71,8 @@ interface Backend {
 
     void update(BaseUpdateQuery query);
 
+    void del(BaseDeleteQuery query);
+
     //Schema[] list();
     //Schema get(string name);
     //Schema create(string name);

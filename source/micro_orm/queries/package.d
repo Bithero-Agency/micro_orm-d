@@ -24,6 +24,7 @@
  */
 module micro_orm.queries;
 
+public import micro_orm.queries.del;
 public import micro_orm.queries.filters;
 public import micro_orm.queries.insert;
 public import micro_orm.queries.select;
