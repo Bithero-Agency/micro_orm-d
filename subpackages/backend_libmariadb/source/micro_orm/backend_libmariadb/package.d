@@ -39,6 +39,7 @@ import std.typecons : Tuple;
 
 debug (micro_orm_mariadb) {
     debug = micro_orm_mariadb_createtable;
+    debug = micro_orm_mariadb_delete;
     debug = micro_orm_mariadb_insert;
     debug = micro_orm_mariadb_select;
     debug = micro_orm_mariadb_update;
@@ -478,7 +479,22 @@ class LibMariaDbBackend : Backend {
         }
     }
 
-    void del(BaseDeleteQuery query) {}
+    string buildDelete(BaseDeleteQuery query) {
+        return "DELETE FROM " ~ quoteName(query.storageName) ~ " WHERE " ~ buildWhereClause(query.fields, query.filters) ~ ";";
+    }
+
+    void del(BaseDeleteQuery query) {
+        string sql = buildDelete(query);
+        debug (micro_orm_mariadb_delete) {
+            import std.stdio;
+            writeln("[LibMariaDbBackend.delete()]: sql to run:");
+            writeln(sql);
+        }
+
+        if (mysql_query(this.con, toStringz(sql))) {
+            throw new MicroOrmException("Error while quering: " ~ to!string(mysql_error(con)));
+        }
+    }
 }
 
 mixin RegisterBackend!("mariadb", LibMariaDbBackend);

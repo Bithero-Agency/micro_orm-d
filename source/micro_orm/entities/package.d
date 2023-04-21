@@ -298,6 +298,15 @@ template BaseEntity(alias T)
         return q;
     }
 
+    DeleteQuery!T del() {
+        auto q = new DeleteQuery!T(
+            MicroOrmModel.StorageName, MicroOrmModel.ConnectionName,
+            MicroOrmModel.Columns, MicroOrmModel.PrimaryKeys
+        );
+        mixin( MicroOrmModel.GenIdFilters!("this.") );
+        return q;
+    }
+
     void save(imported!"micro_orm".Connection con) {
         import std.traits : fullyQualifiedName;
         if (con.id != MicroOrmModel.ConnectionName) {
