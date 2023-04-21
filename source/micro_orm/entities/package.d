@@ -27,7 +27,7 @@ module micro_orm.entities;
 
 public import micro_orm.entities.fields;
 public import micro_orm.entities.id;
-public import micro_orm.queries.select;
+public import micro_orm.queries;
 
 struct Storage {
     string name;
@@ -235,22 +235,23 @@ template BaseEntity(alias T)
         }
         pragma(msg, " - Generated Id Params: |", GenIdParams!(), "|");
 
-        private template GenIdFilters(size_t i = 0) {
+        private template GenIdFilters(string prefix = "", size_t i = 0) {
             static if (i == fieldNames.length) {
                 enum GenIdFilters = "";
             }
             else static if (hasUDA!(T.tupleof[i], IgnoreField)) {
-                enum GenIdFilters = "" ~ GenIdFilters!(i+1);
+                enum GenIdFilters = "" ~ GenIdFilters!(prefix, i+1);
             }
             else static if (hasUDA!(T.tupleof[i], Id)) {
                 enum col = Columns[i];
-                enum GenIdFilters = "q.filter!\"" ~ col.name ~ "\"(eq(" ~ col.name ~ "))" ~ "; " ~ GenIdFilters!(i+1);
+                enum GenIdFilters = "q.filter!\"" ~ col.name ~ "\"(eq(" ~ prefix ~ col.name ~ "))" ~ "; " ~ GenIdFilters!(prefix, i+1);
             }
             else {
-                enum GenIdFilters = "" ~ GenIdFilters!(i+1);
+                enum GenIdFilters = "" ~ GenIdFilters!(prefix, i+1);
             }
         }
         pragma(msg, " - Generated Id Filters: |", GenIdFilters!(), "|");
+        pragma(msg, " - Generated Id Filters: |", GenIdFilters!("this."), "|");
     }
 
     BaseInsertQuery insert() {
@@ -270,6 +271,31 @@ template BaseEntity(alias T)
             MicroOrmModel.Columns, MicroOrmModel.PrimaryKeys,
             values
         );
+    }
+
+    UpdateQuery!T update() {
+        import std.variant : Variant;
+        import std.typecons : Tuple;
+        import std.conv : to;
+        Variant[] values;
+        values.reserve( MicroOrmModel.Columns.length );
+        static foreach (col; MicroOrmModel.Columns) {
+            static if (col.type == FieldType.Enum) {
+                mixin( "values ~= Variant(to!string( this." ~ col.name ~ " ));" );
+            } else {
+                mixin( "values ~= Variant( this." ~ col.name ~ " );" );
+            }
+        }
+
+        auto q = new UpdateQuery!T(
+            MicroOrmModel.StorageName, MicroOrmModel.ConnectionName,
+            MicroOrmModel.Columns, MicroOrmModel.PrimaryKeys,
+            values
+        );
+
+        mixin( MicroOrmModel.GenIdFilters!("this.") );
+
+        return q;
     }
 
     void save(imported!"micro_orm".Connection con) {

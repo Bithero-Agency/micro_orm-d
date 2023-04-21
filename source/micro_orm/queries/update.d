@@ -85,3 +85,15 @@ class BaseUpdateQuery {
         con.backend.update(this);
     }
 }
+
+class UpdateQuery(alias T) : BaseUpdateQuery {
+    this(
+        string storageName, string connectionId,
+        immutable(Field[]) fields, immutable(Field[]) primarykeys,
+        Variant[] values = [],
+    ) {
+        super(storageName, connectionId, fields, primarykeys, values);
+    }
+
+    mixin ImplFilterQuery!(T, UpdateQuery);
+}

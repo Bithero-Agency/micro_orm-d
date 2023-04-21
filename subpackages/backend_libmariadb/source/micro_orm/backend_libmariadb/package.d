@@ -446,7 +446,37 @@ class LibMariaDbBackend : Backend {
         auto id = mysql_insert_id(this.con);
     }
 
-    void update(BaseUpdateQuery query) {}
+    string buildUpdate(BaseUpdateQuery query) {
+        import std.algorithm: canFind;
+        string sql = "UPDATE " ~ quoteName(query.storageName) ~ " SET ";
+        auto _off = 0;
+        foreach (i, f; query.fields) {
+            // do not update primary keys...
+            if (query.primarykeys.canFind(f)) {
+                _off++;
+                continue;
+            }
+
+            if (i > _off) { sql ~= ", "; }
+            sql ~= quoteName(f.name) ~ " = " ~ quoteValue(f.type, query.values[i]);
+        }
+        sql ~= " WHERE " ~ buildWhereClause(query.fields, query.filters);
+        sql ~= ";";
+        return sql;
+    }
+
+    void update(BaseUpdateQuery query) {
+        string sql = buildUpdate(query);
+        debug (micro_orm_mariadb_update) {
+            import std.stdio;
+            writeln("[LibMariaDbBackend.update()]: sql to run:");
+            writeln(sql);
+        }
+
+        if (mysql_query(this.con, toStringz(sql))) {
+            throw new MicroOrmException("Error while quering: " ~ to!string(mysql_error(con)));
+        }
+    }
 }
 
 mixin RegisterBackend!("mariadb", LibMariaDbBackend);
