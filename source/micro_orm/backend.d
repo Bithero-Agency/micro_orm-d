@@ -25,7 +25,8 @@
 
 module micro_orm.backend;
 
-import micro_orm.entities : ColumnInfo, BaseSelectQuery;
+import micro_orm.entities : ColumnInfo;
+import micro_orm.queries;
 import micro_orm.exceptions : MicroOrmException;
 
 interface Schema {
@@ -64,6 +65,9 @@ interface Backend {
     void ensurePresence(string storageName, immutable ColumnInfo[] columns, immutable ColumnInfo[] primarykeys);
 
     QueryResult[] select(BaseSelectQuery query, bool all);
+
+    // TODO: create an result type which contains the sequence/auto-increment id or similar
+    void insert(BaseInsertQuery query);
 
     //Schema[] list();
     //Schema get(string name);

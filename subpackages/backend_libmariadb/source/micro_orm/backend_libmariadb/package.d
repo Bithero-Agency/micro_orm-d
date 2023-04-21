@@ -398,6 +398,37 @@ class LibMariaDbBackend : Backend {
 
         return query_res;
     }
+
+    string buildInsert(BaseInsertQuery query) {
+        string sql = "INSERT INTO " ~ quoteName(query.storageName) ~ " (";
+        foreach (i, f; query.fields) {
+            if (i > 0) { sql ~= ","; }
+            sql ~= quoteName(f.name);
+        }
+        sql ~= ") VALUES (";
+        foreach (i, v; query.values) {
+            if (i > 0) { sql ~= ","; }
+            sql ~= quoteValue(query.fields[i].type, v);
+        }
+        sql ~= ");";
+        return sql;
+    }
+
+    void insert(BaseInsertQuery query) {
+        string sql = buildInsert(query);
+        debug (micro_orm_mariadb_insert) {
+            import std.stdio;
+            writeln("[LibMariaDbBackend.insert()]: sql to run:");
+            writeln(sql);
+        }
+
+        if (mysql_query(this.con, toStringz(sql))) {
+            throw new MicroOrmException("Error while quering: " ~ to!string(mysql_error(con)));
+        }
+
+        // get's the auto-increment id for the previous query
+        auto id = mysql_insert_id(this.con);
+    }
 }
 
 mixin RegisterBackend!("mariadb", LibMariaDbBackend);

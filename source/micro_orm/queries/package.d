@@ -24,4 +24,5 @@
  */
 module micro_orm.queries;
 
+public import micro_orm.queries.insert;
 public import micro_orm.queries.select;
