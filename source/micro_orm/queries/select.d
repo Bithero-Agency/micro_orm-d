@@ -40,29 +40,7 @@ private template ImplSelectQuery(alias T) {
     import std.traits : fullyQualifiedName, isInstanceOf;
     static assert(__traits(hasMember, T, "MicroOrmModel"), "Cannot implement SelectQuery for type `" ~ fullyQualifiedName!T ~ "` which is no entity");
 
-    SelectQuery!T filter(string field, U)(U filter)
-    if (isInstanceOf!(Filter, U))
-    {
-        enum col = T.MicroOrmModel.getColumnByName(field);
-        alias Ty = U.Type;
-        enum checked = compTimeCheckField!(Ty, col);
-
-        enum colIdx = T.MicroOrmModel.getColumnIndexByName(field);
-        static if (col.type == FieldType.Enum) {
-            import std.conv : to;
-            _filters ~= Tuple!(int, Operation, Variant)(colIdx, filter.op, Variant( to!string(filter.val) ));
-        }
-        else {
-            _filters ~= Tuple!(int, Operation, Variant)(colIdx, filter.op, Variant(filter.val));
-        }
-        return this;
-    }
-
-    SelectQuery!T filter(string field, V)(V value)
-    if (!isInstanceOf!(Filter, V))
-    {
-        return this.filter!field(new Filter!V(Operation.Eq, value));
-    }
+    mixin ImplFilterQuery!(T, SelectQuery);
 
     SelectQuery!T order_by(string field, Order ord) {
         this._orders ~= Tuple!(string, Order)(field, ord);

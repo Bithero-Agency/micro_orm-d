@@ -56,3 +56,32 @@ private template ImplOperation(string funcname, string op) {
     );
 }
 mixin ImplOperation!("eq", "Eq");
+
+template ImplFilterQuery(alias T, alias QueryType) {
+    import std.traits : fullyQualifiedName, isInstanceOf;
+    static assert(__traits(hasMember, T, "MicroOrmModel"), "Cannot use ImplFilterQuery for type `" ~ fullyQualifiedName!T ~ "` which is no entity");
+
+    QueryType!T filter(string field, U)(U filter)
+    if (isInstanceOf!(Filter, U))
+    {
+        enum col = T.MicroOrmModel.getColumnByName(field);
+        alias Ty = U.Type;
+        enum checked = compTimeCheckField!(Ty, col);
+
+        enum colIdx = T.MicroOrmModel.getColumnIndexByName(field);
+        static if (col.type == FieldType.Enum) {
+            import std.conv : to;
+            _filters ~= Tuple!(int, Operation, Variant)(colIdx, filter.op, Variant( to!string(filter.val) ));
+        }
+        else {
+            _filters ~= Tuple!(int, Operation, Variant)(colIdx, filter.op, Variant(filter.val));
+        }
+        return this;
+    }
+
+    QueryType!T filter(string field, V)(V value)
+    if (!isInstanceOf!(Filter, V))
+    {
+        return this.filter!field(new Filter!V(Operation.Eq, value));
+    }
+}
