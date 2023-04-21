@@ -35,6 +35,7 @@ import std.conv : to;
 import std.string : toStringz, split, join, replace;
 import std.algorithm : map;
 import std.variant : Variant;
+import std.typecons : Tuple;
 
 class MariadbException : MicroOrmException {
     mixin ExceptionInheritConstructors;
@@ -321,18 +322,12 @@ class LibMariaDbBackend : Backend {
         }
     }
 
-    string buildSelect(BaseSelectQuery query) {
-        string sql = "SELECT ";
-        foreach (i, f; query.fields) {
-            if (i > 0) { sql ~= ","; }
-            sql ~= quoteName(f.name);
-        }
-        sql ~= " FROM " ~ quoteName(query.storageName);
-        sql ~= " WHERE ";
-        if (query.filters.length > 0) {
-            foreach (idx, instance; query.filters) {
+    string buildWhereClause(immutable(Field[]) fields, const(Tuple!(int, Operation, Variant)[]) filters) {
+        if (filters.length > 0) {
+            string sql = "";
+            foreach (idx, instance; filters) {
                 if (idx > 0) { sql ~= ","; }
-                ColumnInfo col = query.fields[instance[0]];
+                ColumnInfo col = fields[instance[0]];
                 sql ~= quoteName(col.name);
                 final switch (instance[1]) {
                     case Operation.None:
@@ -343,10 +338,21 @@ class LibMariaDbBackend : Backend {
                         break;
                 }
             }
+            return sql;
         }
         else {
-            sql ~= "1";
+            return "1";
         }
+    }
+
+    string buildSelect(BaseSelectQuery query) {
+        string sql = "SELECT ";
+        foreach (i, f; query.fields) {
+            if (i > 0) { sql ~= ","; }
+            sql ~= quoteName(f.name);
+        }
+        sql ~= " FROM " ~ quoteName(query.storageName);
+        sql ~= " WHERE " ~ buildWhereClause(query.fields, query.filters);
         if (query.orders.length > 0) {
             sql ~= " ORDER BY ";
             foreach (i, o; query.orders) {
