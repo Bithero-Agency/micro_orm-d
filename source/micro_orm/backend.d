@@ -29,31 +29,6 @@ import micro_orm.entities : ColumnInfo;
 import micro_orm.queries;
 import micro_orm.exceptions : MicroOrmException;
 
-interface Schema {
-    Backend getBackend();
-
-    Database[] list();
-    Database get(string name);
-    Database create(string name);
-    bool remove(string name);
-}
-
-interface Database {
-    Backend getBackend();
-    Schema getSchema();
-
-    Collection[] list();
-    Collection get();
-    Collection create(string name);
-    bool remove(string name);
-}
-
-interface Collection {
-    Backend getBackend();
-    Schema getSchema();
-    Database getDatabase();
-}
-
 /**
  * Interface for a query result; compareable to an row in some databases.
  */
@@ -134,11 +109,6 @@ interface Backend {
      */
     void del(BaseDeleteQuery query);
 
-    //Schema[] list();
-    //Schema get(string name);
-    //Schema create(string name);
-    //bool remove(string name);
-    //Schema defaultSchema();
 }
 
 /**

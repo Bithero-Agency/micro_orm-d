@@ -150,18 +150,3 @@ class Connection {
     }
 
 }
-
-//Connection getConnection(string name) {
-//    return new Connection();
-//}
-//
-//Connection createConnection(Driver)(string name, string dsn) {
-//    return new Connection();
-//}
-//
-//Connection createConnection(string name, string driver, string dsn) {
-//    if (__traits(compiles, "import micro_orm.backend_" ~ driver ~ ";")) {
-//        assert (0, "Cannot create connection: driver could not be found");
-//    }
-//    //return new Connection();
-//}

@@ -47,25 +47,7 @@ struct Entity {}
 
 // ======================================================================
 
-template isField(alias of)
-{
-    template isField(alias toCheck)
-    {
-        import std.traits : isFunction, isAggregateType, isBasicType, fullyQualifiedName;
-        alias member = __traits(getMember, of, toCheck);
-        pragma(msg, "isField(of=",of,")(toCheck=",toCheck,"): member=",fullyQualifiedName!member);
-        // !is(BuiltinTypeOf!T)
-        enum isField = !isFunction!member && !isAggregateType!member;
-    }
-}
-
 alias ColumnInfo = Field;
-
-// struct ColumnInfo {
-//     bool isAggregateType;
-//     string type;
-//     string name;
-// }
 
 /**
  * Template to implement an entity
