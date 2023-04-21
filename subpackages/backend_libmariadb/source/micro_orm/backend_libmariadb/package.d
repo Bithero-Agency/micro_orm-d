@@ -84,7 +84,8 @@ private string quoteValue(FieldType type, Variant v) {
         // TODO: Money
         // TODO: Json
         // TODO: Uuid
-        // TODO: Enum, Custom
+        case FieldType.Enum: { return quoteValue(v.get!(string)); }
+        // TODO: Custom
         default: {}
     }
     throw new MicroOrmException("Could not quote value...");

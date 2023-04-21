@@ -540,7 +540,10 @@ template compTimeCheckField(alias T, Field field)
     // TODO: Money
     // TODO: Json
     // TODO: Uuid
-    // TODO: Enum, Custom
+    else static if (FType == FieldType.Enum) {
+        // TODO: do a check if T is of the enum type we want...
+    }
+    // TODO: Custom
     else {
         static assert(0, "Unkown field type: " ~ to!string(FType));
     }

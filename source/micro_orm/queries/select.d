@@ -80,7 +80,13 @@ private template ImplSelectQuery(alias T) {
         enum checked = compTimeCheckField!(Ty, col);
 
         enum colIdx = T.MicroOrmModel.getColumnIndexByName(field);
-        _filters ~= Tuple!(int, Operation, Variant)(colIdx, filter.op, Variant(filter.val));
+        static if (col.type == FieldType.Enum) {
+            import std.conv : to;
+            _filters ~= Tuple!(int, Operation, Variant)(colIdx, filter.op, Variant( to!string(filter.val) ));
+        }
+        else {
+            _filters ~= Tuple!(int, Operation, Variant)(colIdx, filter.op, Variant(filter.val));
+        }
         return this;
     }
 
