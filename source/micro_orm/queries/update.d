@@ -32,6 +32,9 @@ import ministd.optional : Option;
 import std.typecons : Tuple;
 import std.variant : Variant;
 
+/**
+ * Base of an update query
+ */
 class BaseUpdateQuery {
     private {
         string _storageName;
@@ -86,6 +89,10 @@ class BaseUpdateQuery {
     }
 }
 
+/**
+ * Generic update query for a type T, used onto entities to expose handy `filter!""(filter)` methods
+ * to filter onto fields of an entitiy.
+ */
 class UpdateQuery(alias T) : BaseUpdateQuery {
     this(
         string storageName, string connectionId,

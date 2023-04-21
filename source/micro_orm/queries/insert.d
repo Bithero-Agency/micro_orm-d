@@ -29,6 +29,9 @@ import micro_orm.exceptions;
 import micro_orm : Connection;
 import std.variant : Variant;
 
+/**
+ * A basic insert query.
+ */
 class BaseInsertQuery {
     private {
         string _storageName;

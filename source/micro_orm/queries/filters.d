@@ -24,11 +24,20 @@
  */
 module micro_orm.queries.filters;
 
+/**
+ * Operations for an filter
+ */
 enum Operation {
+    /// No operation; used as default value
     None,
+
+    /// Equality operation; value must equal other
     Eq,
 }
 
+/**
+ * Filter for queries which stores a value of a generic type T and a operation
+ */
 class Filter(alias T) {
     alias Type = T;
     private T _val;
@@ -57,6 +66,9 @@ private template ImplOperation(string funcname, string op) {
 }
 mixin ImplOperation!("eq", "Eq");
 
+/**
+ * Template to help implementing `filter!""(filter)` methods for queries that can hold filters.
+ */
 template ImplFilterQuery(alias T, alias QueryType) {
     import std.traits : fullyQualifiedName, isInstanceOf;
     static assert(__traits(hasMember, T, "MicroOrmModel"), "Cannot use ImplFilterQuery for type `" ~ fullyQualifiedName!T ~ "` which is no entity");

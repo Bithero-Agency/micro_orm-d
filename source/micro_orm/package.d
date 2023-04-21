@@ -31,6 +31,9 @@ import micro_orm.exceptions;
 
 import std.stdio;
 
+/**
+ * A connection to a database
+ */
 class Connection {
     private static shared(string[]) connectionIds;
 
@@ -49,12 +52,39 @@ class Connection {
         return this._backend;
     }
 
+    /**
+     * Creates a new connection
+     * 
+     * Generic Params:
+     *  Modules = the modules to be used for entities to persist onto the connection
+     * 
+     * Params:
+     *  dsn = format: `<driver>:<backend-dsn>`
+     *  user = the user to use
+     *  password = the password to use
+     * 
+     * Returns: a brand-new connection
+     */
     static Connection create(Modules...)(
         string dsn, string user, string password
     ) {
         return create!Modules("default", dsn, user, password);
     }
 
+    /**
+     * Creates a new connection
+     * 
+     * Generic Params:
+     *  Modules = the modules to be used for entities to persist onto the connection
+     * 
+     * Params:
+     *  id = id of the connection
+     *  dsn = format: `<driver>:<backend-dsn>`
+     *  user = the user to use
+     *  password = the password to use
+     * 
+     * Returns: a brand-new connection
+     */
     static Connection create(Modules...)(
         string id, string dsn, string user, string password
     ) {

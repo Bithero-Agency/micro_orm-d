@@ -29,11 +29,20 @@ public import micro_orm.entities.fields;
 public import micro_orm.entities.id;
 public import micro_orm.queries;
 
+/**
+ * UDA to apply storage information to a entity
+ */
 struct Storage {
+    /// The name of the entity to use inside the database; this becomes the name of the table / collection.
     string name;
+
+    /// The connection-id this entity should be persisted on
     string connection = null;
 }
 
+/**
+ * UDA to mark an entity
+ */
 struct Entity {}
 
 // ======================================================================
@@ -58,6 +67,9 @@ alias ColumnInfo = Field;
 //     string name;
 // }
 
+/**
+ * Template to implement an entity
+ */
 template BaseEntity(alias T)
 {
     import micro_orm.lazylist;
@@ -254,6 +266,11 @@ template BaseEntity(alias T)
         pragma(msg, " - Generated Id Filters: |", GenIdFilters!("this."), "|");
     }
 
+    /**
+     * Creates an insert query for the current entity
+     * 
+     * Returns: the insert query which inserts the current entity when executed
+     */
     BaseInsertQuery insert() {
         import std.variant : Variant;
         import std.conv : to;
@@ -266,6 +283,9 @@ template BaseEntity(alias T)
                 mixin( "values ~= Variant( this." ~ col.name ~ " );" );
             }
         }
+
+
+
         return new BaseInsertQuery(
             MicroOrmModel.StorageName, MicroOrmModel.ConnectionName,
             MicroOrmModel.Columns, MicroOrmModel.PrimaryKeys,
@@ -273,6 +293,11 @@ template BaseEntity(alias T)
         );
     }
 
+    /**
+     * Creates an update query for the current entity
+     * 
+     * Returns: the update query which updates the current entity when executed
+     */
     UpdateQuery!T update() {
         import std.variant : Variant;
         import std.typecons : Tuple;
@@ -298,6 +323,11 @@ template BaseEntity(alias T)
         return q;
     }
 
+    /**
+     * Creates an delete query for the current entity
+     * 
+     * Returns: the delete query which deletes the current entity when executed
+     */
     DeleteQuery!T del() {
         auto q = new DeleteQuery!T(
             MicroOrmModel.StorageName, MicroOrmModel.ConnectionName,
@@ -318,6 +348,11 @@ template BaseEntity(alias T)
         }
     }
 
+    /**
+     * Creates an select query for the entity
+     * 
+     * Returns: the select query for the entity
+     */
     static SelectQuery!T find() {
         import std.stdio;
         return new SelectQuery!T(
@@ -326,6 +361,13 @@ template BaseEntity(alias T)
         );
     }
 
+    /**
+     * Creates an select query for the entity for the id(s)
+     * 
+     * This can be used as a shorthand to create a select query for entities with the specified primary keys.
+     * 
+     * Returns: the select query for the entity for the id(s)
+     */
     mixin(
         "static SelectQuery!T find_by_id(", MicroOrmModel.GenIdParams!(), ") {",
             "import micro_orm.queries.select;",

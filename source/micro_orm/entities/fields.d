@@ -5,6 +5,7 @@ import micro_orm.exceptions;
 
 // https://dlang.org/spec/type.html#basic-data-types
 
+/// Enum to represent types for serialization to the database
 enum FieldType {
     None,
 
@@ -42,10 +43,20 @@ enum FieldType {
     Custom, // uses an optional `string` for the fully qualified name
 }
 
+/// Parameter for the $(REF FieldType.Blob) type
 struct BlobSize {
     enum Kind { Tiny, Medium, Long, Blob }
+    private {
+        Kind kind;
+        size_t sz;
+    }
+
+    // TODO
 }
 
+/**
+ * UDA to declare Field data for serialization.
+ */
 struct Field {
     /// Name of the field on the database; `null` means we use the member's name
     string name = null;
@@ -353,8 +364,14 @@ struct Field {
 
 }
 
+/**
+ * UDA to exclude the annotated field from serialization.
+ */
 struct IgnoreField {}
 
+/**
+ * Template to map a field's type from a native dlang type.
+ */
 template mapFieldTypeFromNative(alias T) {
     import std.traits : fullyQualifiedName, EnumMembers;
 
@@ -395,6 +412,9 @@ template mapFieldTypeFromNative(alias T) {
     }
 }
 
+/**
+ * Helper to determine if a fieldtype is a integer
+ */
 enum bool isFieldTypeIntKind(FieldType type) = (
     (type == FieldType.TinyInt) || (type == FieldType.TinyUInt)
     || (type == FieldType.SmallInt) || (type == FieldType.SmallUInt)
@@ -402,6 +422,9 @@ enum bool isFieldTypeIntKind(FieldType type) = (
     || (type == FieldType.BigInt) || (type == FieldType.BigUInt)
 );
 
+/**
+ * Template to map a fields's type from a native dlang type with the help of an field UDA as hint
+ */
 template mapFieldTypeFromNativeWithHint(alias T, Field hint) {
     import std.traits : fullyQualifiedName, EnumMembers;
     import std.conv : to;
@@ -471,6 +494,9 @@ template mapFieldTypeFromNativeWithHint(alias T, Field hint) {
     }
 }
 
+/**
+ * Template to perform a compiletime check if a certain type is compareable with a field
+ */
 template compTimeCheckField(alias T, Field field)
 {
     import std.conv : to;

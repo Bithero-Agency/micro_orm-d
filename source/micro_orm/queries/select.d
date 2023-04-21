@@ -31,8 +31,14 @@ import ministd.optional : Option;
 import std.typecons : Tuple;
 import std.variant : Variant;
 
+/**
+ * Ordering of a $(REF BaseSelectQuery)
+ */
 enum Order {
+    /// Ascending
     Asc,
+
+    /// Descending
     Desc,
 }
 
@@ -66,6 +72,9 @@ private template ImplSelectQuery(alias T) {
     }
 }
 
+/**
+ * Base of an select query
+ */
 class BaseSelectQuery {
     private {
         string _storageName;
@@ -121,7 +130,10 @@ class BaseSelectQuery {
     }
 }
 
-/// Represents a select query
+/**
+ * Generic select query for a type T, used onto entities to expose handy `filter!""(filter)` methods
+ * to filter onto fields of an entitiy.
+ */
 class SelectQuery(alias T) : BaseSelectQuery {
     this(
         string storageName, string connectionId,

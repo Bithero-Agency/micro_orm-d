@@ -32,6 +32,9 @@ import ministd.optional : Option;
 import std.typecons : Tuple;
 import std.variant : Variant;
 
+/**
+ * The base delete query
+ */
 class BaseDeleteQuery {
     private {
         string _storageName;
@@ -79,6 +82,10 @@ class BaseDeleteQuery {
     }
 }
 
+/**
+ * Generic delete query for a type T, used onto entities to expose handy `filter!""(filter)` methods
+ * to filter onto fields of an entitiy.
+ */
 class DeleteQuery(alias T) : BaseDeleteQuery {
     this(
         string storageName, string connectionId,

@@ -54,23 +54,84 @@ interface Collection {
     Database getDatabase();
 }
 
+/**
+ * Interface for a query result; compareable to an row in some databases.
+ */
 interface QueryResult {
+    /**
+     * Called to get a column's data as string
+     * 
+     * Params:
+     *  index = the index of the data
+     *  col = the column/field information
+     * 
+     * Returns: the string representation of the data inside the database
+     */
     string get(size_t index, immutable ColumnInfo col);
 }
 
+/**
+ * Interface to be implemented by backends
+ */
 interface Backend {
+    /**
+     * Called on connection creation; since each connection holds it's own instance of a backend,
+     * this is only called once per connection.
+     * 
+     * Params:
+     *  dsn = the dsn for the connection; how this is parsed depends on the backend
+     *  user = the user to use
+     *  passwd = the password to use
+     */
     void connect(string dsn, string user, string passwd);
+
+    /**
+     * Called when a connection is closing.
+     */
     void close();
 
+    /**
+     * Called to ensure presence of an entity's collection. Backends are supposed to create tables / collections here
+     * or validate them if they already exists and throw errors if there are any problems.
+     * 
+     * Throws: $(REF micro_orm.exceptions.MicroOrmException)
+     */
     void ensurePresence(string storageName, immutable ColumnInfo[] columns, immutable ColumnInfo[] primarykeys);
 
+    /**
+     * Called to execute an select query.
+     * 
+     * Params:
+     *  query = the query to execute
+     *  all = helper flag; if true, the caller wants to list all entries; if false, only one is requested and the limit of the query is always 1.
+     * 
+     * Returns: a list of query results
+     */
     QueryResult[] select(BaseSelectQuery query, bool all);
 
     // TODO: create an result type which contains the sequence/auto-increment id or similar
+    /**
+     * Called to execute an insert query.
+     * 
+     * Params:
+     *  query = the qery to execute
+     */
     void insert(BaseInsertQuery query);
 
+    /**
+     * Called to execute an update query.
+     * 
+     * Params:
+     *  query = the qery to execute
+     */
     void update(BaseUpdateQuery query);
 
+    /**
+     * Called to execute an delete query.
+     * 
+     * Params:
+     *  query = the qery to execute
+     */
     void del(BaseDeleteQuery query);
 
     //Schema[] list();
@@ -80,12 +141,18 @@ interface Backend {
     //Schema defaultSchema();
 }
 
+/**
+ * Execption to be throwed when a requested backend could not be found.
+ */
 class NoSuchBackendException : MicroOrmException {
     this(string name) {
         super("Could not find micro_orm-backend '" ~ name ~ "'");
     }
 }
 
+/**
+ * Registry for MicroOrm backends
+ */
 class BackendRegistry {
     private Backend delegate()[string] constructors;
 
@@ -126,6 +193,9 @@ class BackendRegistry {
     }
 }
 
+/**
+ * Helper-template to register an backend for MicroOrm
+ */
 template RegisterBackend(string name, alias BackendClass) {
     import std.traits;
     pragma(msg, "Registering micro_orm backend '" ~ name ~ "' with type ", fullyQualifiedName!BackendClass);
