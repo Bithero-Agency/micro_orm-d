@@ -216,6 +216,41 @@ template BaseEntity(alias T)
             }
             throw new MicroOrmFieldException("Unknown field: `" ~ name ~ "` for entity `" ~ fullyQualifiedName!T ~ "`");
         }
+
+        private template GenIdParams(size_t i = 0) {
+            static if (i == fieldNames.length) {
+                enum GenIdParams = "";
+            }
+            else static if (hasUDA!(T.tupleof[i], IgnoreField)) {
+                enum GenIdParams = "" ~ GenIdParams!(i+1);
+            }
+            else static if (hasUDA!(T.tupleof[i], Id)) {
+                alias fieldType = fieldTypes[i];
+                enum col = Columns[i];
+                enum GenIdParams = fieldType.stringof ~ " " ~ col.name ~ "," ~ GenIdParams!(i+1);
+            }
+            else {
+                enum GenIdParams = "" ~ GenIdParams!(i+1);
+            }
+        }
+        pragma(msg, " - Generated Id Params: |", GenIdParams!(), "|");
+
+        private template GenIdFilters(size_t i = 0) {
+            static if (i == fieldNames.length) {
+                enum GenIdFilters = "";
+            }
+            else static if (hasUDA!(T.tupleof[i], IgnoreField)) {
+                enum GenIdFilters = "" ~ GenIdFilters!(i+1);
+            }
+            else static if (hasUDA!(T.tupleof[i], Id)) {
+                enum col = Columns[i];
+                enum GenIdFilters = "q.filter!\"" ~ col.name ~ "\"(eq(" ~ col.name ~ "))" ~ "; " ~ GenIdFilters!(i+1);
+            }
+            else {
+                enum GenIdFilters = "" ~ GenIdFilters!(i+1);
+            }
+        }
+        pragma(msg, " - Generated Id Filters: |", GenIdFilters!(), "|");
     }
 
     void save(imported!"micro_orm".Connection con) {
@@ -237,5 +272,12 @@ template BaseEntity(alias T)
         );
     }
 
-
+    mixin(
+        "static SelectQuery!T find_by_id(", MicroOrmModel.GenIdParams!(), ") {",
+            "import micro_orm.queries.select;",
+            "auto q = find();",
+            MicroOrmModel.GenIdFilters!(),
+            "return q;",
+        "}"
+    );
 }
