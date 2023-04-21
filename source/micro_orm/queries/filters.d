@@ -16,14 +16,43 @@
  */
 
 /** 
- * Module for all queries MicroOrm supports
+ * Module for a query filters; used by SelectQuery and UpdateQuery
  * 
  * License:   $(HTTP https://www.gnu.org/licenses/agpl-3.0.html, AGPL 3.0).
  * Copyright: Copyright (C) 2023 Mai-Lapyst
  * Authors:   $(HTTP codeark.it/Mai-Lapyst, Mai-Lapyst)
  */
-module micro_orm.queries;
+module micro_orm.queries.filters;
 
-public import micro_orm.queries.filters;
-public import micro_orm.queries.insert;
-public import micro_orm.queries.select;
+enum Operation {
+    None,
+    Eq,
+}
+
+class Filter(alias T) {
+    alias Type = T;
+    private T _val;
+    private Operation _op;
+
+    this(Operation op, T val) {
+        this._op = op;
+        this._val = val;
+    }
+
+    @property T val() {
+        return this._val;
+    }
+
+    @property Operation op() {
+        return this._op;
+    }
+}
+
+private template ImplOperation(string funcname, string op) {
+    mixin(
+        "Filter!T " ~ funcname ~ "(T)(T val) {"
+            ~ "return new Filter!T(Operation." ~ op ~ ", val);"
+        ~ "}"
+    );
+}
+mixin ImplOperation!("eq", "Eq");

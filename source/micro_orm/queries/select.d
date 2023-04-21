@@ -26,6 +26,7 @@ module micro_orm.queries.select;
 
 import micro_orm.entities.fields;
 import micro_orm.exceptions;
+import micro_orm.queries.filters;
 import ministd.optional : Option;
 import std.typecons : Tuple;
 import std.variant : Variant;
@@ -34,39 +35,6 @@ enum Order {
     Asc,
     Desc,
 }
-
-enum Operation {
-    None,
-    Eq,
-}
-
-class Filter(alias T) {
-    alias Type = T;
-    private T _val;
-    private Operation _op;
-
-    this(Operation op, T val) {
-        this._op = op;
-        this._val = val;
-    }
-
-    @property T val() {
-        return this._val;
-    }
-
-    @property Operation op() {
-        return this._op;
-    }
-}
-
-private template ImplOperation(string funcname, string op) {
-    mixin(
-        "Filter!T " ~ funcname ~ "(T)(T val) {"
-            ~ "return new Filter!T(Operation." ~ op ~ ", val);"
-        ~ "}"
-    );
-}
-mixin ImplOperation!("eq", "Eq");
 
 private template ImplSelectQuery(alias T) {
     import std.traits : fullyQualifiedName, isInstanceOf;
