@@ -89,7 +89,7 @@ private string quoteValue(FieldType type, Variant v) {
         // TODO: Custom
         default: {}
     }
-    throw new MicroOrmException("Could not quote value...");
+    throw new MicroOrmException("Could not quote value of type: " ~ to!string(type));
 }
 
 private string quoteName(string i) {
