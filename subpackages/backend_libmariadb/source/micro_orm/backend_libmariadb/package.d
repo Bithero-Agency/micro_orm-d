@@ -37,6 +37,13 @@ import std.algorithm : map;
 import std.variant : Variant;
 import std.typecons : Tuple;
 
+debug (micro_orm_mariadb) {
+    debug = micro_orm_mariadb_createtable;
+    debug = micro_orm_mariadb_insert;
+    debug = micro_orm_mariadb_select;
+    debug = micro_orm_mariadb_update;
+}
+
 class MariadbException : MicroOrmException {
     mixin ExceptionInheritConstructors;
 }
