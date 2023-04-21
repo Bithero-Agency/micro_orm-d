@@ -432,6 +432,8 @@ class LibMariaDbBackend : Backend {
         // get's the auto-increment id for the previous query
         auto id = mysql_insert_id(this.con);
     }
+
+    void update(BaseUpdateQuery query) {}
 }
 
 mixin RegisterBackend!("mariadb", LibMariaDbBackend);

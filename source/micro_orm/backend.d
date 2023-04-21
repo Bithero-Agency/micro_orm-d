@@ -69,6 +69,8 @@ interface Backend {
     // TODO: create an result type which contains the sequence/auto-increment id or similar
     void insert(BaseInsertQuery query);
 
+    void update(BaseUpdateQuery query);
+
     //Schema[] list();
     //Schema get(string name);
     //Schema create(string name);
