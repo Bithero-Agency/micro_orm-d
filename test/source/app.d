@@ -9,6 +9,7 @@ import micro_orm.backend_libmariadb.mysql.mysql;
 
 import micro_orm;
 import micro_orm.backend : QueryResult;
+import micro_orm.entities.generators.sequence;
 
 struct Other {}
 
@@ -18,10 +19,17 @@ enum SomeEnum {
 	SE_THREE,
 }
 
+import std.bigint;
+
 @Entity
 @Storage("person")
 class Person {
 	@Id
+	@GeneratedValue
+	int id;
+
+	static const ValueGenerator __id_gen = new SequenceGenerator!int("seq_person");
+
 	//@Field(FieldType.String, 255)
 	string name;
 
@@ -33,6 +41,9 @@ class Person {
 
 	@IgnoreField
 	Other o;
+
+	@Field(FieldType.BigInt)
+	BigInt bi;
 
 	// static Person from_query_result(QueryResult data) {
 	// 	auto res = new Person();
@@ -165,10 +176,30 @@ int main(string[] args) {
 
 	auto q = Person.find()
 		.order_by_asc("name")
+		//.filter!"en"(SomeEnum.SE_ONE)
 		.offset(0);
 	auto list = q.all(con);
 	foreach (p; list) {
 		writeln("name: `", p.name, "` | ", "age: ", p.age, "` | ", "en: ", p.en);
+	}
+
+	{
+		auto maybe_p = q.one(con);
+		if (maybe_p.isSome()) {
+			auto p = maybe_p.take();
+			writeln("name: `", p.name, "` | ", "age: ", p.age, "` | ", "en: ", p.en);
+			p.en = SomeEnum.SE_ONE;
+			p.update().exec(con);
+		}
+	}
+
+	{
+		auto p = new Person();
+		p.name = "Maria Muster";
+		p.age = 30;
+		p.en = SomeEnum.SE_ONE;
+		p.insert().exec(con);
+		//p.del().exec(con);
 	}
 
 	// sqlite://filepath?param=value
