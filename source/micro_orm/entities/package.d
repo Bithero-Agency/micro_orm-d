@@ -414,6 +414,7 @@ template BaseEntity(alias T)
     mixin(
         "static imported!\"micro_orm.queries\".SelectQuery!T find_by_id(", MicroOrmModel.GenIdParams!(), ") {",
             "import micro_orm.queries.select;",
+            "import micro_orm.queries.filters;",
             "auto q = find();",
             MicroOrmModel.GenIdFilters!(),
             "return q;",
