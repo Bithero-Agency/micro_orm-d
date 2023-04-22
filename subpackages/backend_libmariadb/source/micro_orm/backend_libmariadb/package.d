@@ -246,6 +246,42 @@ class LibMariaDbBackend : Backend {
         return res.row_count == 1;
     }
 
+    private string fieldToSqlType(immutable ColumnInfo col) {
+        switch (col.type) {
+            // TODO: char
+            case FieldType.String: {
+                if (col.hasData()) {
+                    return "VARCHAR(" ~ to!string(col.getSize()) ~ ")";
+                } else {
+                    return "VARCHAR(255)";
+                }
+            }
+            // TODO: text
+            // TODO: more ints
+            case FieldType.Int: {
+                if (col.hasData()) {
+                    return "INT(" ~ to!string(col.getSize()) ~ ")";
+                } else {
+                    return "INT";
+                }
+            }
+            // TODO: float, double
+            // TODO: decimal
+            // TODO: binary, varbinary
+            // TODO: bool
+            // TODO: money
+            // TODO: json
+            // TODO: uuid
+            case FieldType.Enum: {
+                return "ENUM(" ~ map!quoteValue(col.getVariants()).join(',') ~ ")";
+            }
+            // TODO: custom
+            default: {
+                throw new MariadbException("Unknown field type: " ~ to!string(col.type));
+            }
+        }
+    }
+
     private void create_table(string storageName, immutable ColumnInfo[] columns, immutable ColumnInfo[] primarykeys) {
         string sql = "CREATE TABLE `" ~ storageName ~ "`(";
 
@@ -255,42 +291,7 @@ class LibMariaDbBackend : Backend {
             }
             sql ~= quoteName(col.name);
             sql ~= " ";
-            switch (col.type) {
-                // TODO: char
-                case FieldType.String: {
-                    if (col.hasData()) {
-                        sql ~= "VARCHAR(" ~ to!string(col.getSize()) ~ ")";
-                    } else {
-                        sql ~= "VARCHAR(255)";
-                    }
-                    break;
-                }
-                // TODO: text
-                // TODO: more ints
-                case FieldType.Int: {
-                    if (col.hasData()) {
-                        sql ~= "INT(" ~ to!string(col.getSize()) ~ ")";
-                    } else {
-                        sql ~= "INT";
-                    }
-                    break;
-                }
-                // TODO: float, double
-                // TODO: decimal
-                // TODO: binary, varbinary
-                // TODO: bool
-                // TODO: money
-                // TODO: json
-                // TODO: uuid
-                case FieldType.Enum: {
-                    sql ~= "ENUM(" ~ map!quoteValue(col.getVariants()).join(',') ~ ")";
-                    break;
-                }
-                // TODO: custom
-                default: {
-                    throw new MariadbException("Unknown field type: " ~ to!string(col.type));
-                }
-            }
+            sql ~= fieldToSqlType(col);
         }
 
         if (primarykeys.length > 0) {
