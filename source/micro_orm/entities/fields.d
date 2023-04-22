@@ -430,7 +430,7 @@ template mapFieldTypeFromNative(alias T) {
     else static if (is(T == imported!"std.internal.math.biguintcore".BigUint)) { enum mapFieldTypeFromNative = "FieldType.BigUInt"; }
     else static if (is(T == struct) || is(T == class)) {
         // TODO: add metadata about embeddable statue; i.e. struct=embedded, class=referenced
-        enum mapFieldTypeFromNative = "FieldType.Custom, " ~ fullyQualifiedName!T;
+        enum mapFieldTypeFromNative = "FieldType.Custom, \"" ~ fullyQualifiedName!T ~ "\"";
     }
     else static if (is(T == enum)) {
         alias enum_members = EnumMembers!T;
