@@ -401,7 +401,9 @@ struct IgnoreField {}
 template mapFieldTypeFromNative(alias T) {
     import std.traits : fullyQualifiedName, EnumMembers;
 
-    static if (is(T == struct) || is(T == class)) {
+    static if (is(T == imported!"std.bigint".BigInt)) { enum mapFieldTypeFromNative = "FieldType.BigInt"; }
+    else static if (is(T == imported!"std.internal.math.biguintcore".BigUint)) { enum mapFieldTypeFromNative = "FieldType.BigUInt"; }
+    else static if (is(T == struct) || is(T == class)) {
         // TODO: add metadata about embeddable statue; i.e. struct=embedded, class=referenced
         enum mapFieldTypeFromNative = "FieldType.Custom, " ~ fullyQualifiedName!T;
     }
@@ -431,8 +433,10 @@ template mapFieldTypeFromNative(alias T) {
     else static if (is(T == ushort)) { enum mapFieldTypeFromNative = "FieldType.SmallUInt"; }
     else static if (is(T == int)) { enum mapFieldTypeFromNative = "FieldType.Int"; }
     else static if (is(T == uint)) { enum mapFieldTypeFromNative = "FieldType.UInt"; }
-    // TODO: long & ulong (64bit)
-    // TODO: cent & ucent (128bit)
+    else static if (is(T == long)) { enum mapFieldTypeFromNative = "FieldType.BigInt"; }
+    else static if (is(T == ulong)) { enum mapFieldTypeFromNative = "FieldType.BigInt"; }
+    else static if (is(T == cent)) { enum mapFieldTypeFromNative = "FieldType.BigInt"; }
+    else static if (is(T == ucent)) { enum mapFieldTypeFromNative = "FieldType.BigUInt"; }
     else {
         static assert(0, "MicroOrm: Cannot map unknown fieldtype `" ~ T.stringof ~ "`");
     }
@@ -472,29 +476,52 @@ template mapFieldTypeFromNativeWithHint(alias T, Field hint) {
         enum mapFieldTypeFromNativeWithHint = "FieldType.String";
     }
     else static if (isFieldTypeIntKind!(HintType)) {
-        template IntImpl(args...) {
-            static if (args.length == 0) {
-                enum IntImpl = "";
+        static if (HintType == FieldType.BigInt) {
+            static assert(
+                is(T == long) || is(T == imported!"core.int128".Cent) || is(T == imported!"std.bigint".BigInt),
+                "MicroOrm: can only use `BigInt` when member is of type `long`, `cent` or `std.bigint.BigInt`"
+            );
+            static if (hint.hasData()) {
+                enum mapFieldTypeFromNativeWithHint = "FieldType.BigInt" ~ ", " ~ to!string(hint.getSize());
             } else {
-                alias intTy = args[0];
-                alias nativeTy = args[1];
-                static if (HintType == intTy) {
-                    static assert(is(T == nativeTy), "MicroOrm: can only use `" ~ intTy.stringof ~ "` when member is of type `" ~ nativeTy.stringof ~ "`");
-                    enum IntImpl = "FieldType." ~ intTy.stringof ~ ", " ~ to!string(hint.getSize());
-                } else {
-                    enum IntImpl = IntImpl!( args[2 .. $] );
-                }
+                enum mapFieldTypeFromNativeWithHint = "FieldType.BigInt";
             }
         }
-        enum mapFieldTypeFromNativeWithHint = IntImpl!(
-            FieldType.TinyInt, byte,
-            FieldType.TinyUInt, ubyte,
-            FieldType.SmallInt, short,
-            FieldType.SmallUInt, ushort,
-            FieldType.Int, int,
-            FieldType.UInt, uint,
-        );
-        // TODO: BigInt
+        else static if (HintType == FieldType.BigUInt) {
+            static assert(
+                is(T == ulong) || is(T == ucent) || is(T == imported!"std.internal.math.biguintcore".BigUint),
+                "MicroOrm: can only use `BigUInt` when member is of type `ulong`, `ucent` or `std.internal.math.biguintcore.BigUint`"
+            );
+            static if (hint.hasData()) {
+                enum mapFieldTypeFromNativeWithHint = "FieldType.BigUInt" ~ ", " ~ to!string(hint.getSize());
+            } else {
+                enum mapFieldTypeFromNativeWithHint = "FieldType.BigUInt";
+            }
+        }
+        else {
+            template IntImpl(args...) {
+                static if (args.length == 0) {
+                    enum IntImpl = "";
+                } else {
+                    alias intTy = args[0];
+                    alias nativeTy = args[1];
+                    static if (HintType == intTy) {
+                        static assert(is(T == nativeTy), "MicroOrm: can only use `" ~ intTy.stringof ~ "` when member is of type `" ~ nativeTy.stringof ~ "`");
+                        enum IntImpl = "FieldType." ~ intTy.stringof ~ ", " ~ to!string(hint.getSize());
+                    } else {
+                        enum IntImpl = IntImpl!( args[2 .. $] );
+                    }
+                }
+            }
+            enum mapFieldTypeFromNativeWithHint = IntImpl!(
+                FieldType.TinyInt, byte,
+                FieldType.TinyUInt, ubyte,
+                FieldType.SmallInt, short,
+                FieldType.SmallUInt, ushort,
+                FieldType.Int, int,
+                FieldType.UInt, uint,
+            );
+        }
     }
     else static if (HintType == FieldType.Float) {
         static assert(is(T == float), "MicroOrm: can only use `FieldType.Float` when member is of type `float`");
