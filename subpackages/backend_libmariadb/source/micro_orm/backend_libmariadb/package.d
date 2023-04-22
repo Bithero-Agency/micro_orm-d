@@ -31,6 +31,8 @@ import micro_orm.exceptions;
 
 import micro_orm.backend_libmariadb.mysql.mysql;
 
+import ministd.optional;
+
 import std.conv : to;
 import std.string : toStringz, split, join, replace;
 import std.algorithm : map;
@@ -251,18 +253,18 @@ class LibMariaDbBackend : Backend {
             // TODO: char
             case FieldType.String: {
                 if (col.hasData()) {
-                    return "VARCHAR(" ~ to!string(col.getSize()) ~ ")";
+                    return "varchar(" ~ to!string(col.getSize()) ~ ")";
                 } else {
-                    return "VARCHAR(255)";
+                    return "varchar(255)";
                 }
             }
             // TODO: text
             // TODO: more ints
             case FieldType.Int: {
                 if (col.hasData()) {
-                    return "INT(" ~ to!string(col.getSize()) ~ ")";
+                    return "int(" ~ to!string(col.getSize()) ~ ")";
                 } else {
-                    return "INT";
+                    return "int";
                 }
             }
             // TODO: float, double
@@ -273,7 +275,7 @@ class LibMariaDbBackend : Backend {
             // TODO: json
             // TODO: uuid
             case FieldType.Enum: {
-                return "ENUM(" ~ map!quoteValue(col.getVariants()).join(',') ~ ")";
+                return "enum(" ~ map!quoteValue(col.getVariants()).join(',') ~ ")";
             }
             // TODO: custom
             default: {
@@ -320,7 +322,79 @@ class LibMariaDbBackend : Backend {
     }
 
     private void verify_table(string storageName, immutable ColumnInfo[] columns) {
-        // TODO: implement verify_table
+        import std.bitmanip : BitArray;
+
+        if (mysql_query(this.con, toStringz("DESCRIBE " ~ quoteName(storageName) ~ ";"))) {
+            throw new MicroOrmException("Error while quering DESCRIBE: " ~ to!string(mysql_error(con)));
+        }
+
+        bool[] buf = new bool[columns.length];
+        buf[0..columns.length] = true;
+
+        // Result has the format: Field,Type,Null,Key,Default,Extra;
+        MYSQL_RES* res = mysql_use_result(this.con);
+
+        while (true) {
+            MYSQL_ROW row = mysql_fetch_row(res);
+            if (row is null) { break; }
+
+            alias findColResult = Tuple!(size_t, immutable ColumnInfo);
+            Optional!findColResult findColumn(string field_name) {
+                foreach (i, col; columns) {
+                    if (col.name == field_name) {
+                        return Optional!findColResult.some( findColResult(i, col) );
+                    }
+                }
+                return Optional!findColResult.none();
+            }
+
+            string field_name = to!string(row[0]);
+            auto maybe_col_search = findColumn(field_name);
+            if (maybe_col_search.isNone()) {
+                import std.stdio : writeln;
+                writeln("Warn: Found column `" ~ field_name ~ "` which is not specified inside the model with storagename `" ~ storageName ~ "`");
+                continue;
+            }
+            auto col_search = maybe_col_search.take();
+
+            bool compareTypes(string got, string expected) {
+                import std.string;
+                import std.regex;
+                if (expected.indexOf('(') == -1) {
+                    // expected got no type-params, so lets erase them from the type gotten as well before we compare
+                    got = replaceFirst(got, regex("\\(.*\\)"), "");
+                }
+                import std.stdio;
+                writeln("-> got: |",got,"|");
+                writeln("-> expected: |",expected,"|");
+                return got == expected;
+            }
+
+            string got_type = to!string(row[1]);
+            string expected_type = fieldToSqlType(col_search[1]);
+            if (!compareTypes(got_type, expected_type)) {
+                throw new MariadbException(
+                    "Table verification failed: table `" ~ storageName ~ "`, column `" ~ field_name ~ "`"
+                        ~ ", should have type `" ~ expected_type ~ "` but got `" ~ got_type ~ "` instead."
+                );
+            }
+
+            // TODO: null, key, default and extra
+
+            buf[ col_search[0] ] = false;
+        }
+
+        bool had_errors = false;
+        foreach (i, flag; buf) {
+            if (flag) {
+                import std.stdio : writeln;
+                writeln("Error: Could not find column for field `" ~ columns[i].name ~ "` for storagename `" ~ storageName ~ "`");
+                had_errors = true;
+            }
+        }
+        if (had_errors) {
+            throw new MariadbException("One or more columns couldn't be found in the database. Check output for more information.");
+        }
     }
 
     void ensurePresence(string storageName, immutable ColumnInfo[] columns, immutable ColumnInfo[] primarykeys) {
