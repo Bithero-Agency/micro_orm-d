@@ -60,6 +60,7 @@ template BaseEntity(alias T)
     /// Contains the Model data of the Entity
     struct MicroOrmModel {
         import std.traits;
+        import micro_orm.entities;
 
         pragma(msg, "Build entity `" ~ fullyQualifiedName!T ~ "`");
 
@@ -138,6 +139,44 @@ template BaseEntity(alias T)
                     enum Type = mapFieldTypeFromNative!fieldType;
                 }
 
+                static if (hasUDA!(T.tupleof[i], GeneratedValue)) {
+                    // is a generated value; look after a member T.__<membername>_gen
+                    // which needs to be either a constant of type ValueGenerator or
+                    // a static function which returns a ValueGenerator
+
+                    enum generatorMemberName = "__" ~ fieldNames[i] ~ "_gen";
+                    static if (hasStaticMember!(T, generatorMemberName)) {
+                        alias generatorMember = __traits(getMember, T, generatorMemberName);
+                        static if (isFunction!generatorMember) {
+                            import std.meta : AliasSeq;
+                            static assert(
+                                is(ReturnType!generatorMember == ValueGenerator) && is(Parameters!generatorMember == AliasSeq!()),
+                                "MicroOrm: field `" ~ fieldNames[i] ~ "` of `" ~ fullyQualifiedName!T ~ "` is annotated with `@GeneratedValue` "
+                                    ~ "and there is a static member function `" ~ generatorMemberName ~ "`; it needs to have a return type of `ValueGenerator` and no parameters"
+                            );
+                        }
+                        else {
+                            static assert(0,
+                                "MicroOrm: field `" ~ fieldNames[i] ~ "` of `" ~ fullyQualifiedName!T ~ "` is annotated with `@GeneratedValue` "
+                                    ~ "and there is a static member `" ~ generatorMemberName ~ "`, but it needs to be a function"
+                            );
+                        }
+                    } else static if (__traits(hasMember, T, generatorMemberName)) {
+                        alias generatorMember = __traits(getMember, T, generatorMemberName);
+                        static if (!isConst!(typeof(generatorMember))) {
+                            static assert(0,
+                                "MicroOrm: field `" ~ fieldNames[i] ~ "` of `" ~ fullyQualifiedName!T ~ "` is annotated with `@GeneratedValue` "
+                                    ~ "and there is a member `" ~ generatorMemberName ~ "`, but it needs to be a constant"
+                            );
+                        }
+                    } else {
+                        static assert(0,
+                            "MicroOrm: field `" ~ fieldNames[i] ~ "` of `" ~ fullyQualifiedName!T ~ "` is annotated with `@GeneratedValue`;"
+                                ~ " there must be static member function or constant named `" ~ generatorMemberName ~ "` present as well."
+                        );
+                    }
+                }
+
                 import std.conv : to;
                 enum ColumnGen =
                     "imported!\"micro_orm.entities\".ColumnInfo("
@@ -146,7 +185,8 @@ template BaseEntity(alias T)
                         ~ "\"" ~ fieldNames[i] ~ "\","
                         ~ to!string(fi) ~ ","
                         ~ to!string(i) ~ ","
-                        ~ to!string( hasUDA!(T.tupleof[i], Id) )
+                        ~ to!string( hasUDA!(T.tupleof[i], Id) ) ~ ","
+                        ~ to!string( hasUDA!(T.tupleof[i], GeneratedValue) )
                     ~ ")," ~ ColumnGen!(i+1, fi+1);
             }
         }

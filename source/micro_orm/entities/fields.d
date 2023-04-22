@@ -385,6 +385,9 @@ struct FieldInfo {
 
     /// Flag if the column is a primary key
     bool is_primarykey;
+
+    /// Flag id the value of the column should be generated
+    bool generated_value;
 }
 
 /**
