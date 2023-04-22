@@ -156,9 +156,10 @@ template BaseEntity(alias T)
                             );
                         }
                         else {
-                            static assert(0,
+                            static assert(
+                                is(typeof(generatorMember) == const ValueGenerator),
                                 "MicroOrm: field `" ~ fieldNames[i] ~ "` of `" ~ fullyQualifiedName!T ~ "` is annotated with `@GeneratedValue` "
-                                    ~ "and there is a static member `" ~ generatorMemberName ~ "`, but it needs to be a function"
+                                    ~ "and there is a static member `" ~ generatorMemberName ~ "`, but it needs to be either a function or a static const ValueGenerator"
                             );
                         }
                     } else static if (__traits(hasMember, T, generatorMemberName)) {
@@ -220,6 +221,13 @@ template BaseEntity(alias T)
         /// It also validates the structure and yields an error if the entity schema on the remote
         /// dosnt matches the one declared.
         static void ensurePresence(imported!"micro_orm".Connection con) {
+            // setup all generators
+            static foreach (col; MicroOrmModel.Columns) {
+                static if (col.generated_value) {
+                    mixin(fullyQualifiedName!T ~ ".__" ~ col.member_name ~ "_gen.setup(con);");
+                }
+            }
+
             con.backend.ensurePresence(StorageName, Columns, PrimaryKeys);
         }
 
@@ -312,24 +320,34 @@ template BaseEntity(alias T)
      */
     imported!"micro_orm.queries".BaseInsertQuery insert() {
         import micro_orm.queries;
+        import micro_orm : Connection;
         import std.variant : Variant;
         import std.conv : to;
+        import std.traits : fullyQualifiedName;
         Variant[] values;
+        ValueGetter[int] value_getters;
         values.reserve( MicroOrmModel.Columns.length );
         static foreach (col; MicroOrmModel.Columns) {
-            static if (col.type == FieldType.Enum) {
-                mixin( "values ~= Variant(to!string( this." ~ col.name ~ " ));" );
+            static if (col.generated_value) {
+                values ~= Variant(); // push an empty variant that gets filled in...
+
+                enum generatorMemberName = "__" ~ col.member_name ~ "_gen";
+                value_getters[col.index] = ValueGetter((immutable FieldInfo info, Connection con) {
+                    mixin( "return " ~ fullyQualifiedName!T ~ "." ~ generatorMemberName ~ ".next(con);" );
+                });
             } else {
-                mixin( "values ~= Variant( this." ~ col.name ~ " );" );
+                static if (col.type == FieldType.Enum) {
+                    mixin( "values ~= Variant(to!string( this." ~ col.name ~ " ));" );
+                } else {
+                    mixin( "values ~= Variant( this." ~ col.name ~ " );" );
+                }
             }
         }
-
-
 
         return new BaseInsertQuery(
             MicroOrmModel.StorageName, MicroOrmModel.ConnectionName,
             MicroOrmModel.Columns, MicroOrmModel.PrimaryKeys,
-            values
+            values, value_getters
         );
     }
 
