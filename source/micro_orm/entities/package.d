@@ -280,16 +280,13 @@ template BaseEntity(alias T)
         }
 
         private template GenIdParams(size_t i = 0) {
-            static if (i == fieldNames.length) {
+            static if (i == Columns.length) {
                 enum GenIdParams = "";
             }
-            else static if (hasUDA!(T.tupleof[i], IgnoreField)) {
-                enum GenIdParams = "" ~ GenIdParams!(i+1);
-            }
-            else static if (hasUDA!(T.tupleof[i], Id)) {
+            else static if (Columns[i].is_primarykey) {
                 alias fieldType = fieldTypes[i];
                 enum col = Columns[i];
-                enum GenIdParams = fieldType.stringof ~ " " ~ col.name ~ "," ~ GenIdParams!(i+1);
+                enum GenIdParams = fieldType.stringof ~ " " ~ col.member_name ~ "," ~ GenIdParams!(i+1);
             }
             else {
                 enum GenIdParams = "" ~ GenIdParams!(i+1);
@@ -298,15 +295,12 @@ template BaseEntity(alias T)
         pragma(msg, " - Generated Id Params: |", GenIdParams!(), "|");
 
         private template GenIdFilters(string prefix = "", size_t i = 0) {
-            static if (i == fieldNames.length) {
+            static if (i == Columns.length) {
                 enum GenIdFilters = "";
             }
-            else static if (hasUDA!(T.tupleof[i], IgnoreField)) {
-                enum GenIdFilters = "" ~ GenIdFilters!(prefix, i+1);
-            }
-            else static if (hasUDA!(T.tupleof[i], Id)) {
+            else static if (Columns[i].is_primarykey) {
                 enum col = Columns[i];
-                enum GenIdFilters = "q.filter!\"" ~ col.name ~ "\"(eq(" ~ prefix ~ col.name ~ "))" ~ "; " ~ GenIdFilters!(prefix, i+1);
+                enum GenIdFilters = "q.filter!\"" ~ col.name ~ "\"(eq(" ~ prefix ~ col.member_name ~ "))" ~ "; " ~ GenIdFilters!(prefix, i+1);
             }
             else {
                 enum GenIdFilters = "" ~ GenIdFilters!(prefix, i+1);
@@ -340,9 +334,9 @@ template BaseEntity(alias T)
                 });
             } else {
                 static if (col.type == FieldType.Enum) {
-                    mixin( "values ~= Variant(to!string( this." ~ col.name ~ " ));" );
+                    mixin( "values ~= Variant(to!string( this." ~ col.member_name ~ " ));" );
                 } else {
-                    mixin( "values ~= Variant( this." ~ col.name ~ " );" );
+                    mixin( "values ~= Variant( this." ~ col.member_name ~ " );" );
                 }
             }
         }
@@ -368,9 +362,9 @@ template BaseEntity(alias T)
         values.reserve( MicroOrmModel.Columns.length );
         static foreach (col; MicroOrmModel.Columns) {
             static if (col.type == FieldType.Enum) {
-                mixin( "values ~= Variant(to!string( this." ~ col.name ~ " ));" );
+                mixin( "values ~= Variant(to!string( this." ~ col.member_name ~ " ));" );
             } else {
-                mixin( "values ~= Variant( this." ~ col.name ~ " );" );
+                mixin( "values ~= Variant( this." ~ col.member_name ~ " );" );
             }
         }
 
