@@ -190,7 +190,7 @@ template BaseEntity(alias T)
                     ~ ")," ~ ColumnGen!(i+1, fi+1);
             }
         }
-        static immutable Columns = mixin( "[" ~ ColumnGen!() ~ "]" );
+        static immutable(FieldInfo[]) Columns = mixin( "[" ~ ColumnGen!() ~ "]" );
         pragma(msg, " - Columns: ", Columns);
 
         // get all fields annotated with @Id and make primary keys out of them
@@ -213,7 +213,7 @@ template BaseEntity(alias T)
                 enum PrimaryKeyGen = "" ~ PrimaryKeyGen!(i+1);
             }
         }
-        static immutable PrimaryKeys = mixin( "[" ~ PrimaryKeyGen!() ~ "]" );
+        static immutable(FieldInfo[]) PrimaryKeys = mixin( "[" ~ PrimaryKeyGen!() ~ "]" );
         pragma(msg, " - PrimaryKeys: ", PrimaryKeys);
 
         /// Function that's been called on an database connection to ensure the presence of the entity.
@@ -311,6 +311,7 @@ template BaseEntity(alias T)
      * Returns: the insert query which inserts the current entity when executed
      */
     imported!"micro_orm.queries".BaseInsertQuery insert() {
+        import micro_orm.queries;
         import std.variant : Variant;
         import std.conv : to;
         Variant[] values;
@@ -338,6 +339,7 @@ template BaseEntity(alias T)
      * Returns: the update query which updates the current entity when executed
      */
     imported!"micro_orm.queries".UpdateQuery!T update() {
+        import micro_orm.queries;
         import std.variant : Variant;
         import std.typecons : Tuple;
         import std.conv : to;
@@ -368,6 +370,7 @@ template BaseEntity(alias T)
      * Returns: the delete query which deletes the current entity when executed
      */
     imported!"micro_orm.queries".DeleteQuery!T del() {
+        import micro_orm.queries;
         auto q = new DeleteQuery!T(
             MicroOrmModel.StorageName, MicroOrmModel.ConnectionName,
             MicroOrmModel.Columns, MicroOrmModel.PrimaryKeys
@@ -393,6 +396,7 @@ template BaseEntity(alias T)
      * Returns: the select query for the entity
      */
     static imported!"micro_orm.queries".SelectQuery!T find() {
+        import micro_orm.queries;
         import std.stdio;
         return new SelectQuery!T(
             MicroOrmModel.StorageName, MicroOrmModel.ConnectionName,
