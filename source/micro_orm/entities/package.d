@@ -310,7 +310,7 @@ template BaseEntity(alias T)
      * 
      * Returns: the insert query which inserts the current entity when executed
      */
-    BaseInsertQuery insert() {
+    imported!"micro_orm.queries".BaseInsertQuery insert() {
         import std.variant : Variant;
         import std.conv : to;
         Variant[] values;
@@ -337,7 +337,7 @@ template BaseEntity(alias T)
      * 
      * Returns: the update query which updates the current entity when executed
      */
-    UpdateQuery!T update() {
+    imported!"micro_orm.queries".UpdateQuery!T update() {
         import std.variant : Variant;
         import std.typecons : Tuple;
         import std.conv : to;
@@ -367,7 +367,7 @@ template BaseEntity(alias T)
      * 
      * Returns: the delete query which deletes the current entity when executed
      */
-    DeleteQuery!T del() {
+    imported!"micro_orm.queries".DeleteQuery!T del() {
         auto q = new DeleteQuery!T(
             MicroOrmModel.StorageName, MicroOrmModel.ConnectionName,
             MicroOrmModel.Columns, MicroOrmModel.PrimaryKeys
@@ -392,7 +392,7 @@ template BaseEntity(alias T)
      * 
      * Returns: the select query for the entity
      */
-    static SelectQuery!T find() {
+    static imported!"micro_orm.queries".SelectQuery!T find() {
         import std.stdio;
         return new SelectQuery!T(
             MicroOrmModel.StorageName, MicroOrmModel.ConnectionName,
@@ -408,7 +408,7 @@ template BaseEntity(alias T)
      * Returns: the select query for the entity for the id(s)
      */
     mixin(
-        "static SelectQuery!T find_by_id(", MicroOrmModel.GenIdParams!(), ") {",
+        "static imported!\"micro_orm.queries\".SelectQuery!T find_by_id(", MicroOrmModel.GenIdParams!(), ") {",
             "import micro_orm.queries.select;",
             "auto q = find();",
             MicroOrmModel.GenIdFilters!(),
