@@ -85,6 +85,8 @@ template BaseEntity(alias T)
         alias fieldNames = FieldNameTuple!T;
         static assert(fieldTypes.length == fieldNames.length, "FieldTypeTuple and FieldNameTuple dont have the same length!");
 
+        private enum isConst(T) = is(const T == T);
+
         // go through all field and create the column infos
         private template ColumnGen(size_t i = 0, size_t fi = 0) {
             import micro_orm.entities.fields;
@@ -96,6 +98,13 @@ template BaseEntity(alias T)
                 static assert(
                     !hasUDA!(T.tupleof[i], Field),
                     "Cannot have both `@IgnoreField` and `@Field` on the same member field: `" ~ fullyQualifiedName!(T.tupleof[i]) ~ "`"
+                );
+                enum ColumnGen = "" ~ ColumnGen!(i+1, fi);
+            }
+            else static if (isConst!(fieldTypes[i])) {
+                static assert(
+                    !hasUDA!(T.tupleof[i], Field) && !hasUDA!(T.tupleof[i], Id),
+                    "Cannot have `@Field` or `@Id` on a const member field: `" ~ fullyQualifiedName!(T.tupleof[i]) ~ "`"
                 );
                 enum ColumnGen = "" ~ ColumnGen!(i+1, fi);
             }
@@ -182,6 +191,9 @@ template BaseEntity(alias T)
                     enum FieldSetterGen = "";
                 }
                 else static if (hasUDA!(T.tupleof[i], IgnoreField)) {
+                    enum FieldSetterGen = "";
+                }
+                else static if (isConst!(fieldTypes[i])) {
                     enum FieldSetterGen = "";
                 }
                 else {
