@@ -192,7 +192,10 @@ template BaseEntity(alias T)
             }
         }
         static immutable(FieldInfo[]) Columns = mixin( "[" ~ ColumnGen!() ~ "]" );
-        pragma(msg, " - Columns: ", Columns);
+        pragma(msg, " - Columns: ");
+        static foreach (col; Columns) {
+            pragma(msg, "    - ", col);
+        }
 
         // get all fields annotated with @Id and make primary keys out of them
         private template PrimaryKeyGen(size_t i = 0) {
