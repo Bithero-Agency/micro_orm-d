@@ -29,6 +29,34 @@ import micro_orm.exceptions;
 import micro_orm : Connection;
 import std.variant : Variant;
 
+struct ValueGetter {
+    this(Variant delegate(immutable FieldInfo, Connection con) dg) {
+        this.kind = Kind.DG;
+        this.dg = dg;
+    }
+
+    this(Variant function(immutable FieldInfo, Connection con) fn) {
+        this.kind = Kind.FN;
+        this.fn = fn;
+    }
+
+    Variant opCall(immutable FieldInfo info, Connection con) {
+        final switch (this.kind) {
+            case Kind.NO: { throw new Exception("Tried to call a ValueGetter which is of kind NO"); }
+            case Kind.DG: { return this.dg(info, con); }
+            case Kind.FN: { return this.fn(info, con); }
+        }
+    }
+
+private:
+    enum Kind { NO, DG, FN }
+    Kind kind = Kind.NO;
+    union {
+        Variant delegate(immutable FieldInfo, Connection con) dg;
+        Variant function(immutable FieldInfo, Connection con) fn;
+    }
+}
+
 /**
  * A basic insert query.
  */
@@ -39,7 +67,21 @@ class BaseInsertQuery {
         immutable(FieldInfo[]) _fields;
         immutable(FieldInfo[]) _primarykeys;
 
+        ValueGetter[int] _value_getters;
         Variant[] _values;
+    }
+
+    this(
+        string storageName, string connectionId,
+        immutable(FieldInfo[]) fields, immutable(FieldInfo[]) primarykeys,
+        Variant[] values, ValueGetter[int] value_getters
+    ) {
+        this._storageName = storageName;
+        this._connectionId = connectionId;
+        this._fields = fields;
+        this._primarykeys = primarykeys;
+        this._values = values;
+        this._value_getters = value_getters;
     }
 
     this(
@@ -75,6 +117,14 @@ class BaseInsertQuery {
     }
 
     void exec(Connection con) {
+        // resolve getters...
+        foreach (i, getter; _value_getters) {
+            import std.stdio;
+            import std.conv : to;
+            writeln("run getter func: for field " ~ to!string(i));
+            this._values[i] = getter(this.fields[i], con);
+        }
+
         con.backend.insert(this);
     }
 }
