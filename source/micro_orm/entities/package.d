@@ -218,7 +218,10 @@ template BaseEntity(alias T)
             }
         }
         static immutable(FieldInfo[]) PrimaryKeys = mixin( "[" ~ PrimaryKeyGen!() ~ "]" );
-        pragma(msg, " - PrimaryKeys: ", PrimaryKeys);
+        pragma(msg, " - PrimaryKeys: ");
+        static foreach (pk; PrimaryKeys) {
+            pragma(msg, "    - ", pk);
+        }
 
         /// Function that's been called on an database connection to ensure the presence of the entity.
         /// It also validates the structure and yields an error if the entity schema on the remote
