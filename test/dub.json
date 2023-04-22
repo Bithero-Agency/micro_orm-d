@@ -9,7 +9,7 @@
 			"path": "../"
 		},
 		"micro_orm:backend_libmariadb" : {
-			"path": "../subpackages/backend_libmariadb"
+			"path": "../"
 		}
 	}
 }
