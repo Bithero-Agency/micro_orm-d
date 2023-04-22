@@ -86,7 +86,26 @@ private string quoteValue(FieldType type, Variant v) {
         case FieldType.SmallUInt: { return to!string(v.get!(ushort)); }
         case FieldType.Int: { return to!string(v.get!(int)); }
         case FieldType.UInt: { return to!string(v.get!(uint)); }
-        // TODO: BigInt
+
+        case FieldType.BigInt: {
+            import std.bigint;
+            if (v.type() == typeid(long)) {
+                return to!string(v.get!(long));
+            } else if (v.type() == typeid(BigInt)) {
+                return to!string(v.get!(BigInt));
+            }
+            throw new MicroOrmException("Could not quote value BigInt: " ~ to!string(v.type()));
+        }
+        case FieldType.BigUInt: {
+            import std.internal.math.biguintcore;
+            if (v.type() == typeid(ulong)) {
+                return to!string(v.get!(ulong));
+            } else if (v.type() == typeid(BigUint)) {
+                return to!string(v.get!(BigUint));
+            }
+            throw new MicroOrmException("Could not quote value BigUInt: " ~ to!string(v.type()));
+        }
+
         case FieldType.Float: { return to!string(v.get!(float)); }
         case FieldType.Double: { return to!string(v.get!(double)); }
         // TODO: Decimal
@@ -249,6 +268,19 @@ class LibMariaDbBackend : Backend {
     }
 
     private string fieldToSqlType(immutable ColumnInfo col) {
+        enum ImplIntType(FieldType ty, string sqlty) =
+            "case " ~ ty.stringof ~ ": {" ~
+            " if (col.hasData()) { return \"" ~ sqlty ~ "(\" ~ to!string(col.getSize()) ~ \")\"; }" ~
+            " else { return \"" ~ sqlty ~ "\"; }" ~
+            "}"
+        ;
+        enum ImplUIntType(FieldType ty, string sqlty) =
+            "case " ~ ty.stringof ~ ": {" ~
+            " if (col.hasData()) { return \"" ~ sqlty ~ "(\" ~ to!string(col.getSize()) ~ \") unsigned\"; }" ~
+            " else { return \"" ~ sqlty ~ " unsigned\"; }" ~
+            "}"
+        ;
+
         switch (col.type) {
             // TODO: char
             case FieldType.String: {
@@ -259,14 +291,14 @@ class LibMariaDbBackend : Backend {
                 }
             }
             // TODO: text
-            // TODO: more ints
-            case FieldType.Int: {
-                if (col.hasData()) {
-                    return "int(" ~ to!string(col.getSize()) ~ ")";
-                } else {
-                    return "int";
-                }
-            }
+            mixin( ImplIntType!(FieldType.TinyInt, "tinyint") );
+            mixin( ImplUIntType!(FieldType.TinyUInt, "tinyint") );
+            mixin( ImplIntType!(FieldType.SmallInt, "smallint") );
+            mixin( ImplUIntType!(FieldType.SmallUInt, "smallint") );
+            mixin( ImplIntType!(FieldType.Int, "int") );
+            mixin( ImplUIntType!(FieldType.UInt, "int") );
+            mixin( ImplIntType!(FieldType.BigInt, "bigint") );
+            mixin( ImplUIntType!(FieldType.BigUInt, "bigint") );
             // TODO: float, double
             // TODO: decimal
             // TODO: binary, varbinary
