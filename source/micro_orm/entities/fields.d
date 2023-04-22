@@ -365,6 +365,29 @@ struct Field {
 }
 
 /**
+ * Used to descripe all field information that MicroOrm needs / gathers.
+ */
+struct FieldInfo {
+    Field field;
+    alias field this; // act as a "normal" field
+
+    /// Fqn of the parent type that contains the field / member
+    string parent_fqn;
+
+    /// Member name of the dlang member
+    string member_name;
+
+    /// Index of the field
+    int index;
+
+    /// Index of the dlang member
+    int member_index;
+
+    /// Flag if the column is a primary key
+    bool is_primarykey;
+}
+
+/**
  * UDA to exclude the annotated field from serialization.
  */
 struct IgnoreField {}

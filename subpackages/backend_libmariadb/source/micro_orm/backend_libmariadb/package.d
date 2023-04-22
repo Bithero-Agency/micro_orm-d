@@ -405,7 +405,7 @@ class LibMariaDbBackend : Backend {
         }
     }
 
-    string buildWhereClause(immutable(Field[]) fields, const(Tuple!(int, Operation, Variant)[]) filters) {
+    string buildWhereClause(immutable(ColumnInfo[]) fields, const(Tuple!(int, Operation, Variant)[]) filters) {
         if (filters.length > 0) {
             string sql = "";
             foreach (idx, instance; filters) {

@@ -47,7 +47,7 @@ struct Entity {}
 
 // ======================================================================
 
-alias ColumnInfo = Field;
+alias ColumnInfo = FieldInfo;
 
 /**
  * Template to implement an entity
@@ -86,7 +86,7 @@ template BaseEntity(alias T)
         static assert(fieldTypes.length == fieldNames.length, "FieldTypeTuple and FieldNameTuple dont have the same length!");
 
         // go through all field and create the column infos
-        private template ColumnGen(size_t i = 0) {
+        private template ColumnGen(size_t i = 0, size_t fi = 0) {
             import micro_orm.entities.fields;
 
             static if (i == fieldNames.length) {
@@ -97,7 +97,7 @@ template BaseEntity(alias T)
                     !hasUDA!(T.tupleof[i], Field),
                     "Cannot have both `@IgnoreField` and `@Field` on the same member field: `" ~ fullyQualifiedName!(T.tupleof[i]) ~ "`"
                 );
-                enum ColumnGen = "" ~ ColumnGen!(i+1);
+                enum ColumnGen = "" ~ ColumnGen!(i+1, fi);
             }
             else {
                 alias fieldType = fieldTypes[i];
@@ -129,11 +129,16 @@ template BaseEntity(alias T)
                     enum Type = mapFieldTypeFromNative!fieldType;
                 }
 
+                import std.conv : to;
                 enum ColumnGen =
                     "imported!\"micro_orm.entities\".ColumnInfo("
-                        ~ "\"" ~ Name ~ "\","
-                        ~ Type
-                    ~ ")," ~ ColumnGen!(i+1);
+                        ~ "imported!\"micro_orm.entities.fields\".Field(\"" ~ Name ~ "\"," ~ Type ~ "),"
+                        ~ "\"" ~ fullyQualifiedName!T ~ "\","
+                        ~ "\"" ~ fieldNames[i] ~ "\","
+                        ~ to!string(fi) ~ ","
+                        ~ to!string(i) ~ ","
+                        ~ to!string( hasUDA!(T.tupleof[i], Id) )
+                    ~ ")," ~ ColumnGen!(i+1, fi+1);
             }
         }
         static immutable Columns = mixin( "[" ~ ColumnGen!() ~ "]" );

@@ -79,8 +79,8 @@ class BaseSelectQuery {
     private {
         string _storageName;
         string _connectionId;
-        immutable(Field[]) _fields;
-        immutable(Field[]) _primarykeys;
+        immutable(FieldInfo[]) _fields;
+        immutable(FieldInfo[]) _primarykeys;
         Tuple!(int, Operation, Variant)[] _filters;
         Tuple!(string, Order)[] _orders;
         size_t _limit = 0;
@@ -89,7 +89,7 @@ class BaseSelectQuery {
 
     this(
         string storageName, string connectionId,
-        immutable(Field[]) fields, immutable(Field[]) primarykeys
+        immutable(FieldInfo[]) fields, immutable(FieldInfo[]) primarykeys
     ) {
         this._storageName = storageName;
         this._connectionId = connectionId;
@@ -105,11 +105,11 @@ class BaseSelectQuery {
         return this._connectionId;
     }
 
-    @property immutable(Field[]) fields() const {
+    @property immutable(FieldInfo[]) fields() const {
         return this._fields;
     }
 
-    @property immutable(Field[]) primarykeys() const {
+    @property immutable(FieldInfo[]) primarykeys() const {
         return this._primarykeys;
     }
 
@@ -137,7 +137,7 @@ class BaseSelectQuery {
 class SelectQuery(alias T) : BaseSelectQuery {
     this(
         string storageName, string connectionId,
-        immutable(Field[]) fields, immutable(Field[]) primarykeys
+        immutable(FieldInfo[]) fields, immutable(FieldInfo[]) primarykeys
     ) {
         super(storageName, connectionId, fields, primarykeys);
     }
