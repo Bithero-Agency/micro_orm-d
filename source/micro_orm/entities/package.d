@@ -243,7 +243,7 @@ template BaseEntity(alias T)
         }
 
         import micro_orm.backend : QueryResult;
-        static T from_query_result(QueryResult data) {
+        static T from_query_result(QueryResult data, imported!"micro_orm".Connection con) {
             auto res = new T();
             template FieldSetterGen(size_t i = 0) {
                 static if (i == fieldNames.length) {
@@ -316,6 +316,11 @@ template BaseEntity(alias T)
         }
         pragma(msg, " - Generated Id Filters: |", GenIdFilters!(), "|");
         pragma(msg, " - Generated Id Filters: |", GenIdFilters!("this."), "|");
+    }
+
+    private {
+        import micro_orm.entities.fields : IgnoreField;
+        @IgnoreField imported!"micro_orm".Connection __microOrm_con = null;
     }
 
     /**

@@ -160,7 +160,7 @@ class SelectQuery(alias T) : BaseSelectQuery {
         entities.reserve(results.length);
 
         foreach (res; results) {
-            entities ~= T.MicroOrmModel.from_query_result(res);
+            entities ~= T.MicroOrmModel.from_query_result(res, con);
         }
 
         return entities;
@@ -179,7 +179,7 @@ class SelectQuery(alias T) : BaseSelectQuery {
             throw new MicroOrmException("Requested one but got multiple from backend");
         }
 
-        auto entity = T.MicroOrmModel.from_query_result(results[0]);
+        auto entity = T.MicroOrmModel.from_query_result(results[0], con);
         return Option!T.some(entity);
     }
 }
