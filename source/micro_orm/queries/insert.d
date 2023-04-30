@@ -29,6 +29,10 @@ import micro_orm.exceptions;
 import micro_orm : Connection;
 import std.variant : Variant;
 
+version (micro_orm_hooks) {
+    version = micro_orm_hook_insert;
+}
+
 struct ValueGetter {
     this(Variant delegate(immutable FieldInfo, Connection con) dg) {
         this.kind = Kind.DG;
@@ -69,6 +73,10 @@ class BaseInsertQuery {
 
         ValueGetter[int] _value_getters;
         Variant[] _values;
+
+        version (micro_orm_hook_insert) {
+            void delegate(BaseInsertQuery, Connection)[] _hooks;
+        }
     }
 
     this(
@@ -94,6 +102,13 @@ class BaseInsertQuery {
         this._fields = fields;
         this._primarykeys = primarykeys;
         this._values = values;
+    }
+
+    version (micro_orm_hook_insert) {
+        void addHook(void delegate(BaseInsertQuery, Connection) hook) {
+            import std.stdio;
+            this._hooks ~= hook;
+        }
     }
 
     @property string storageName() const {
@@ -123,6 +138,13 @@ class BaseInsertQuery {
             import std.conv : to;
             writeln("run getter func: for field " ~ to!string(i));
             this._values[i] = getter(this.fields[i], con);
+        }
+
+        version (micro_orm_hook_insert) {
+            // call hooks...
+            foreach (hook; _hooks) {
+                hook(this, con);
+            }
         }
 
         con.backend.insert(this);

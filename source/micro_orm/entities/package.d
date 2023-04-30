@@ -29,6 +29,11 @@ public import micro_orm.entities.fields;
 public import micro_orm.entities.id;
 public import micro_orm.queries;
 
+version (micro_orm_hooks) {
+    version = micro_orm_hook_insert;
+    version = micro_orm_hook_update;
+}
+
 /**
  * UDA to apply storage information to a entity
  */
@@ -324,6 +329,15 @@ template BaseEntity(alias T)
         import std.variant : Variant;
         import std.conv : to;
         import std.traits : fullyQualifiedName;
+
+        import micro_orm.entities.hooks;
+        version (micro_orm_hook_insert) {
+            mixin EntityHook!(T, "onInsert", BaseInsertQuery);
+            mixin( onBefore!() );
+        } else {
+            static assert(!hasHookMember!(T, "onInsert"), "MicroOrm: can only use __microOrm_onInsert when having version micro_orm_hook_insert");
+        }
+
         Variant[] values;
         ValueGetter[int] value_getters;
         values.reserve( MicroOrmModel.Columns.length );
@@ -344,11 +358,18 @@ template BaseEntity(alias T)
             }
         }
 
-        return new BaseInsertQuery(
+        auto q = new BaseInsertQuery(
             MicroOrmModel.StorageName, MicroOrmModel.ConnectionName,
             MicroOrmModel.Columns, MicroOrmModel.PrimaryKeys,
             values, value_getters
         );
+
+        version (micro_orm_hook_insert) {
+            mixin( onExec!() );
+            mixin( onAfter!() );
+        }
+
+        return q;
     }
 
     /**
@@ -361,6 +382,15 @@ template BaseEntity(alias T)
         import std.variant : Variant;
         import std.typecons : Tuple;
         import std.conv : to;
+
+        import micro_orm.entities.hooks;
+        version (micro_orm_hook_update) {
+            mixin EntityHook!(T, "onUpdate", UpdateQuery!T);
+            mixin( onBefore!() );
+        } else {
+            static assert(!hasHookMember!(T, "onUpdate"), "MicroOrm: can only use __microOrm_onUpdate when having version micro_orm_hook_update");
+        }
+
         Variant[] values;
         values.reserve( MicroOrmModel.Columns.length );
         static foreach (col; MicroOrmModel.Columns) {
@@ -378,6 +408,11 @@ template BaseEntity(alias T)
         );
 
         mixin( MicroOrmModel.GenIdFilters!("this.") );
+
+        version (micro_orm_hook_update) {
+            mixin( onExec!() );
+            mixin( onAfter!() );
+        }
 
         return q;
     }

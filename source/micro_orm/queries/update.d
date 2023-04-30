@@ -32,6 +32,10 @@ import ministd.optional : Option;
 import std.typecons : Tuple;
 import std.variant : Variant;
 
+version (micro_orm_hooks) {
+    version = micro_orm_hook_update;
+}
+
 /**
  * Base of an update query
  */
@@ -94,6 +98,10 @@ class BaseUpdateQuery {
  * to filter onto fields of an entitiy.
  */
 class UpdateQuery(alias T) : BaseUpdateQuery {
+    version (micro_orm_hook_update) {
+        private void delegate(UpdateQuery!T, Connection)[] _hooks;
+    }
+
     this(
         string storageName, string connectionId,
         immutable(FieldInfo[]) fields, immutable(FieldInfo[]) primarykeys,
@@ -103,4 +111,19 @@ class UpdateQuery(alias T) : BaseUpdateQuery {
     }
 
     mixin ImplFilterQuery!(T, UpdateQuery);
+
+    version (micro_orm_hook_update) {
+        void addHook(void delegate(UpdateQuery!T, Connection) hook) {
+            import std.stdio;
+            this._hooks ~= hook;
+        }
+
+        override void exec(Connection con) {
+            foreach (hook; _hooks) {
+                hook(this, con);
+            }
+
+            con.backend.update(this);
+        }
+    }
 }
