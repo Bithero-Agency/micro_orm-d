@@ -10,6 +10,7 @@ import micro_orm.backend_libmariadb.mysql.mysql;
 import micro_orm;
 import micro_orm.backend : QueryResult;
 import micro_orm.entities.generators.sequence;
+import micro_orm.entities.relations;
 
 struct Other {}
 
@@ -22,9 +23,27 @@ enum SomeEnum {
 import std.bigint;
 
 @Entity
+@Storage("job")
+class Job {
+	@Id
+	@GeneratedValue
+	int id;
+
+	static const ValueGenerator __id_gen = new SequenceGenerator!int("seq_job");
+
+	string name;
+
+	//@OneToOne
+	//Person p;
+
+	mixin BaseEntity!Job;
+}
+
+@Entity
 @Storage("person")
 class Person {
 	@Id
+	@Field("__id")
 	@GeneratedValue
 	int id;
 
@@ -45,6 +64,8 @@ class Person {
 	@Field(FieldType.BigInt)
 	BigInt bi;
 
+	mixin OneToOne!(Job, "job");
+
 	// static Person from_query_result(QueryResult data) {
 	// 	auto res = new Person();
 	// 	res.name = data.get!string( Person.MicroOrmModel.Columns[0] );
@@ -52,6 +73,26 @@ class Person {
 	// }
 
 	mixin BaseEntity!Person;
+
+	// private void __microOrm_onInsert() {
+	// 	writeln("===> __microOrm_onInsert()");
+	// }
+	// private void __microOrm_onInsert(BaseInsertQuery q) {
+	// 	writeln("===> __microOrm_onInsert() query = ", q);
+	// }
+	// private void __microOrm_onInsert(BaseInsertQuery q, Connection c) {
+	// 	writeln("===> __microOrm_onInsert() query = ", q, " con = ", c);
+	// }
+
+	// private void __microOrm_onUpdate() {
+	// 	writeln("===> __microOrm_onUpdate()");
+	// }
+	// private void __microOrm_onUpdate(UpdateQuery!Person q) {
+	// 	writeln("===> __microOrm_onUpdate() query = ", q);
+	// }
+	// private void __microOrm_onUpdate(UpdateQuery!Person q, Connection c) {
+	// 	writeln("===> __microOrm_onUpdate() query = ", q, " con = ", c);
+	// }
 }
 
 
@@ -198,6 +239,10 @@ int main(string[] args) {
 		p.name = "Maria Muster";
 		p.age = 30;
 		p.en = SomeEnum.SE_ONE;
+
+		p.job = new Job();
+		p.job.name = "Teacher";
+
 		p.insert().exec(con);
 		//p.del().exec(con);
 	}

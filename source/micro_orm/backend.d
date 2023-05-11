@@ -66,6 +66,11 @@ interface Backend {
     void close();
 
     /**
+     * Called to start a transaction (if supported!)
+     */
+    //void startTransaction();
+
+    /**
      * Called to ensure presence of an entity's collection. Backends are supposed to create tables / collections here
      * or validate them if they already exists and throw errors if there are any problems.
      * 

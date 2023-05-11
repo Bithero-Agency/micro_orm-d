@@ -11,5 +11,8 @@
 		"micro_orm:backend_libmariadb" : {
 			"path": "../"
 		}
-	}
+	},
+	"versions": [
+		"micro_orm_hooks"
+	]
 }

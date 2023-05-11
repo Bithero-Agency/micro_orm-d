@@ -96,6 +96,8 @@ template BaseEntity(alias T)
         // go through all field and create the column infos
         private template ColumnGen(size_t i = 0, size_t fi = 0) {
             import micro_orm.entities.fields;
+            import micro_orm.entities.relations;
+            import micro_orm.active_value;
 
             static if (i == fieldNames.length) {
                 enum ColumnGen = "";
@@ -114,6 +116,73 @@ template BaseEntity(alias T)
                 );
                 enum ColumnGen = "" ~ ColumnGen!(i+1, fi);
             }
+            // else static if (isInstanceOf!(fieldTypes[i], ActiveValue)) {
+            //     static assert(
+            //         !hasUDA!(T.tupleof[i], Field) && !hasUDA!(T.tupleof[i], Id),
+            //         "Cannot have `@Field` or `@Id` on a field of type micro_orm.active_value.ActiveValue: `" ~ fullyQualifiedName!(T.tupleof[i]) ~ "`"
+            //     );
+            //     enum ColumnGen = "" ~ ColumnGen!(i+1, fi);
+            // }
+            /* else static if (hasUDA!(T.tupleof[i], OneToOne)) {
+                // When refering one-to-one, we "inject" a field of the id-type of the
+                // other type, if any.
+
+                alias fieldType = fieldTypes[i];
+                static if (!__traits(hasMember, fieldType, "MicroOrmModel")) {
+                    static assert(0,
+                        "MicroOrm: field `" ~ fullyQualifiedName!(T.tupleof[i]) ~ "` is annotated with `@OneToOne`,"
+                            ~ " it needs `" ~ fullyQualifiedName!fieldType ~ "` to be a entity."
+                    );
+                } else {
+                    alias refModel = fieldType.MicroOrmModel;
+                    static assert(
+                        refModel.PrimaryKeys.length > 0,
+                        "MicroOrm: field `" ~ fullyQualifiedName!(T.tupleof[i]) ~ "` is annotated with `@OneToOne`,"
+                            ~ " but model of `" ~ fullyQualifiedName!fieldType ~ "` dosnt contain any primary keys."
+                    );
+                    static assert(
+                        !hasUDA!(T.tupleof[i], Id),
+                        "MicroOrm: field `" ~ fullyQualifiedName!(T.tupleof[i]) ~ "` is annotated with `@OneToOne`,"
+                            ~ " so it cannot be annotated with `@Id`."
+                    );
+
+                    static if (hasUDA!(T.tupleof[i], Field)) {
+                        alias field_udas = getUDAs!(T.tupleof[i], Field);
+                        static assert(
+                            field_udas.length == 1,
+                            "MicroOrm: field `" ~ fullyQualifiedName!(T.tupleof[i]) ~ "` is annotated with multiple `@Field` annotations."
+                        );
+                        static if (is(field_udas[0] == Field)) {
+                            enum Name = fieldNames[i];
+                        } else {
+                            static if(field_udas[0].name !is null) {
+                                enum Name = field_udas[0].name;
+                            } else {
+                                enum Name = fieldNames[i];
+                            }
+                        }
+                    } else {
+                        enum Name = fieldNames[i];
+                    }
+
+                    // A composite primary key must generate a field per component inside the composite key
+                    private template RefColumnGen(size_t j = 0) {
+
+                    }
+
+                    import std.conv : to;
+                    enum ColumnGen =
+                        "imported!\"micro_orm.entities\".FieldInfo("
+                            ~ "imported!\"micro_orm.entities.fields\".Field(\"" ~ Name ~ "\"),"
+                            ~ "\"" ~ fullyQualifiedName!T ~ "\","
+                            ~ "\"" ~ fieldNames[i] ~ "\","
+                            ~ to!string(fi) ~ ","
+                            ~ to!string(i) ~ ","
+                            ~ "false,"
+                            ~ "false,"
+                        ~ ")" ~ ColumnGen!(i+1, fi);
+                }
+            } */
             else {
                 alias fieldType = fieldTypes[i];
 
