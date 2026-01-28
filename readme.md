@@ -2,6 +2,8 @@
 
 A minimal jet complete orm for dlang projects
 
+Notice: micro_orm will NOT recieve further updates; please switch to [ninox.d-oxm](https://codearq.net/bithero-dlang/ninox.d-oxm).
+
 ## License
 
 The code in this repository is licensed under AGPL-3.0-or-later; for more details see the `LICENSE` file in the repository.
